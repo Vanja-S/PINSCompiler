@@ -57,7 +57,8 @@ public class Lexer {
      */
     public List<Symbol> scan() {
         var symbols = new ArrayList<Symbol>();
-        // todo: implementacija leksikalne analize
+        //TODO: implementacija leksikalne analize
+        
         return symbols;
     }
 }

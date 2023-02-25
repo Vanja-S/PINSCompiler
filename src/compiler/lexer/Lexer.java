@@ -154,6 +154,8 @@ public class Lexer {
                         i++;
                     }
                 }
+                tempString += "\'";
+                i++;
                 symbols.add(new Symbol(new Position(k, j, i, j), C_STRING, tempString));
                 k = i;
                 tempString = "";
@@ -167,9 +169,9 @@ public class Lexer {
             // Operatorji
             else if (multi_char_op.containsKey(Character.toString(source.charAt(i)))) {
                 if (source.charAt(i + 1) == '=') {
+                    String token_key = Character.toString(source.charAt(i)) + Character.toString(source.charAt(i + 1));
                     i++;
                     k++;
-                    String token_key = Character.toString(source.charAt(i)) + Character.toString(source.charAt(i + 1));
                     symbols.add(new Symbol(new Position(k - 1, j, k, j), multi_char_op.get(token_key), token_key));
                 } else {
                     symbols.add(new Symbol(new Position(k, j, k, j),
@@ -213,12 +215,12 @@ public class Lexer {
                 }
 
                 // Preveri ali je podatkovni tip
-                if (data_types.containsKey(tempString)) {
+                else if (data_types.containsKey(tempString)) {
                     t = data_types.get(tempString);
                 }
 
                 // Preveri če je true ali false vrednost
-                if (tempString.equals("true") || tempString.equals("false"))
+                else if (tempString.equals("true") || tempString.equals("false"))
                     t = C_LOGICAL;
 
                 // Če ne, je ime

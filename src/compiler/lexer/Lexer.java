@@ -9,12 +9,14 @@ import static common.RequireNonNull.requireNonNull;
 import static compiler.lexer.TokenType.*;
 import compiler.lexer.Position.Location;
 
+import java.nio.channels.Pipe.SourceChannel;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.StringTokenizer;
+
+import javax.swing.undo.StateEdit;
 
 import common.Report;
 
@@ -44,8 +46,6 @@ public class Lexer {
 
     /**
      * Preslikava iz enojnega karakterja v TokenType enum
-     * 
-     * @param source
      */
     private final static HashMap<Character, TokenType> single_char_lexems;
 
@@ -70,6 +70,9 @@ public class Lexer {
         single_char_lexems.put(',', TokenType.OP_COMMA);
     }
 
+    /**
+     * Preslikava iz več-simbolnih operatorjev v TokenType enum
+     */
     private final static HashMap<String, TokenType> multi_char_op;
 
     static {
@@ -84,6 +87,18 @@ public class Lexer {
         multi_char_op.put("==", TokenType.OP_EQ);
         multi_char_op.put("<=", TokenType.OP_LEQ);
         multi_char_op.put(">=", TokenType.OP_GEQ);
+    }
+
+    /**
+     * Preslikava podatkovnih tipov v TokenType enum
+     */
+    private final static HashMap<String, TokenType> data_types;
+
+    static {
+        data_types = new HashMap<String, TokenType>();
+        data_types.put("integer", TokenType.AT_INTEGER);
+        data_types.put("logical", TokenType.AT_LOGICAL);
+        data_types.put("string", TokenType.AT_STRING);
     }
 
     /**
@@ -114,6 +129,10 @@ public class Lexer {
                 k = 0;
                 comment = false;
                 continue;
+            }
+
+            else if (source.charAt(i) == '$') {
+                symbols.add(new Symbol(new Position(k, j, k, j), EOF, "$"));
             }
 
             else if (comment)
@@ -161,14 +180,49 @@ public class Lexer {
             else if (single_char_lexems.containsKey(source.charAt(i))) {
                 symbols.add(new Symbol(new Position(k, j, k, j), single_char_lexems.get(source.charAt(i)),
                         Character.toString(source.charAt(i))));
-                continue;
             }
 
             // Števila
-            else if ((int) source.charAt(i) >= 48 && (int) source.charAt(i) <= 57) {
-                
+            else if (Character.isDigit(source.charAt(i))) {
+                tempString = "";
+                tempString += source.charAt(i);
+                while (Character.isDigit(source.charAt(i + 1))) {
+                    tempString += source.charAt(i + 1);
+                    i++;
+                }
+                symbols.add(new Symbol(new Position(k, j, i, j), C_INTEGER, tempString));
+                k = i;
+                tempString = "";
             }
 
+            // Keywords in imena
+            else {
+                tempString = "";
+                tempString += source.charAt(i);
+                while (Character.isLetterOrDigit(source.charAt(i + 1)) || (int) source.charAt(i) == 95) {
+                    tempString += source.charAt(i + 1);
+                    i++;
+                }
+                TokenType t;
+
+                // Preveri ali je keyword
+                if (keywordMapping.containsKey(tempString)) {
+                    t = keywordMapping.get(tempString);
+                }
+
+                // Preveri ali je podatkovni tip
+                if (data_types.containsKey(tempString)) {
+                    t = data_types.get(tempString);
+                }
+
+                // Če ne, je ime
+                else
+                    t = IDENTIFIER;
+
+                symbols.add(new Symbol(new Position(k, j, i, j), t, tempString));
+                k = i;
+                tempString = "";
+            }
 
         }
         return symbols;

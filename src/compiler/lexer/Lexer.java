@@ -9,14 +9,11 @@ import static common.RequireNonNull.requireNonNull;
 import static compiler.lexer.TokenType.*;
 import compiler.lexer.Position.Location;
 
-import java.nio.channels.Pipe.SourceChannel;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
-
-import javax.swing.undo.StateEdit;
 
 import common.Report;
 
@@ -119,7 +116,7 @@ public class Lexer {
     public List<Symbol> scan() {
         var symbols = new ArrayList<Symbol>();
         // TODO: implementacija leksikalne analize
-        boolean string = false, comment = false;
+        boolean comment = false;
         String tempString = "";
 
         for (int i = 0, j = 0, k = 0; i < source.length(); i++, k++) {
@@ -144,17 +141,22 @@ public class Lexer {
             }
 
             // Največja prednost gre string-om
-            // TODO: Strings
+            // Tukaj jih sparsamo
             else if (source.charAt(i) == '\'') {
-                if (!string) {
-                    string = true;
-                    tempString += source.charAt(i);
-                } else {
-                    string = false;
-                    tempString += source.charAt(i);
-                    symbols.add(new Symbol(new Position(k, j, k, j), C_STRING, tempString));
-                    tempString = "";
+                tempString = "";
+                tempString += source.charAt(i);
+                while (source.charAt(i + 1) != '\'' || (source.charAt(i + 1) == '\'' && source.charAt(i + 2) == '\'')) {
+                    if (source.charAt(i + 1) == '\'') {
+                        tempString += source.charAt(i + 1);
+                        i += 2;
+                    } else {
+                        tempString += source.charAt(i + 1);
+                        i++;
+                    }
                 }
+                symbols.add(new Symbol(new Position(k, j, i, j), C_STRING, tempString));
+                k = i;
+                tempString = "";
             }
 
             // Belo besedilo vržemo ven
@@ -214,6 +216,10 @@ public class Lexer {
                 if (data_types.containsKey(tempString)) {
                     t = data_types.get(tempString);
                 }
+
+                // Preveri če je true ali false vrednost
+                if (tempString.equals("true") || tempString.equals("false"))
+                    t = C_LOGICAL;
 
                 // Če ne, je ime
                 else

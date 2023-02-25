@@ -115,13 +115,12 @@ public class Lexer {
      */
     public List<Symbol> scan() {
         var symbols = new ArrayList<Symbol>();
-        // TODO: implementacija leksikalne analize
         boolean comment = false;
         String tempString = "";
 
         for (int i = 0, j = 0, k = 0; i < source.length(); i++, k++) {
             // Newline karakterji
-            if ((int) source.charAt(i) == 10 || (int) source.charAt(i) == 13) {
+            if ((int) source.charAt(i) == 0xa || (int) source.charAt(i) == 0xd) {
                 j++;
                 k = 0;
                 comment = false;
@@ -158,18 +157,17 @@ public class Lexer {
                 i++;
                 symbols.add(new Symbol(new Position(k, j, i, j), C_STRING, tempString));
                 k = i;
-                tempString = "";
             }
 
             // Belo besedilo vržemo ven
-            else if ((int) source.charAt(i) == 32 || (int) source.charAt(i) == 9) {
+            else if (Character.isWhitespace(source.charAt(i))) {
                 continue;
             }
 
             // Operatorji
             else if (multi_char_op.containsKey(Character.toString(source.charAt(i)))) {
                 if (source.charAt(i + 1) == '=') {
-                    String token_key = Character.toString(source.charAt(i)) + Character.toString(source.charAt(i + 1));
+                    String token_key = Character.toString(source.charAt(i) + source.charAt(i + 1));
                     i++;
                     k++;
                     symbols.add(new Symbol(new Position(k - 1, j, k, j), multi_char_op.get(token_key), token_key));
@@ -196,7 +194,6 @@ public class Lexer {
                 }
                 symbols.add(new Symbol(new Position(k, j, i, j), C_INTEGER, tempString));
                 k = i;
-                tempString = "";
             }
 
             // Keywords in imena
@@ -208,7 +205,6 @@ public class Lexer {
                     i++;
                 }
                 TokenType t;
-
                 // Preveri ali je keyword
                 if (keywordMapping.containsKey(tempString)) {
                     t = keywordMapping.get(tempString);
@@ -229,7 +225,6 @@ public class Lexer {
 
                 symbols.add(new Symbol(new Position(k, j, i, j), t, tempString));
                 k = i;
-                tempString = "";
             }
 
         }

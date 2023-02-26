@@ -178,12 +178,13 @@ public class Lexer {
                     StringBuffer token_key = new StringBuffer().append(source.charAt(i)).append(source.charAt(i + 1));
                     i++;
                     inline_stop_index++;
-                    symbols.add(new Symbol(new Position(line_index, inline_start_index - 1, line_index, inline_stop_index), multi_char_op.get(token_key.toString()), token_key.toString()));
+                    symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index), multi_char_op.get(token_key.toString()), token_key.toString()));
                 } else {
                     symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index),
                             multi_char_op.get(Character.toString(source.charAt(i))),
                             Character.toString(source.charAt(i))));
                 }
+                inline_start_index = inline_stop_index;
             }
 
             // Ujami vse znake, ki so lahko samo en char

@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
+import javax.swing.text.html.InlineView;
+
 import common.Report;
 
 public class Lexer {
@@ -118,17 +120,18 @@ public class Lexer {
         boolean comment = false;
         String tempString = "";
 
-        for (int i = 0, j = 0, k = 0; i < source.length(); i++, k++) {
+        for (int i = 0, line_index = 1, inline_start_index = 1, inline_stop_index = 1; i < source.length(); i++, inline_start_index++, inline_stop_index++) {
             // Newline karakterji
             if ((int) source.charAt(i) == 0xa || (int) source.charAt(i) == 0xd) {
-                j++;
-                k = 0;
+                line_index++;
+                inline_start_index = 1;
+                inline_stop_index = 1;
                 comment = false;
                 continue;
             }
 
             else if (source.charAt(i) == '$') {
-                symbols.add(new Symbol(new Position(k, j, k, j), EOF, "$"));
+                symbols.add(new Symbol(new Position(inline_start_index, line_index, inline_start_index, line_index), EOF, "$"));
             }
 
             else if (comment)
@@ -148,15 +151,18 @@ public class Lexer {
                     if (source.charAt(i + 1) == '\'') {
                         tempString += source.charAt(i + 1);
                         i += 2;
+                        inline_stop_index += 2;
                     } else {
                         tempString += source.charAt(i + 1);
                         i++;
+                        inline_stop_index++;
                     }
                 }
                 tempString += "\'";
                 i++;
-                symbols.add(new Symbol(new Position(k, j, i, j), C_STRING, tempString));
-                k = i;
+                inline_stop_index++;
+                symbols.add(new Symbol(new Position(inline_start_index, line_index, inline_stop_index, line_index), C_STRING, tempString));
+                inline_start_index = inline_stop_index;
             }
 
             // Belo besedilo vržemo ven
@@ -167,12 +173,12 @@ public class Lexer {
             // Operatorji
             else if (multi_char_op.containsKey(Character.toString(source.charAt(i)))) {
                 if (source.charAt(i + 1) == '=') {
-                    String token_key = Character.toString(source.charAt(i) + source.charAt(i + 1));
+                    StringBuffer token_key = new StringBuffer().append(source.charAt(i)).append(source.charAt(i + 1));
                     i++;
-                    k++;
-                    symbols.add(new Symbol(new Position(k - 1, j, k, j), multi_char_op.get(token_key), token_key));
+                    inline_start_index++;
+                    symbols.add(new Symbol(new Position(inline_start_index - 1, line_index, inline_start_index, line_index), multi_char_op.get(token_key.toString()), token_key.toString()));
                 } else {
-                    symbols.add(new Symbol(new Position(k, j, k, j),
+                    symbols.add(new Symbol(new Position(inline_start_index, line_index, inline_start_index, line_index),
                             multi_char_op.get(Character.toString(source.charAt(i))),
                             Character.toString(source.charAt(i))));
                 }
@@ -180,7 +186,7 @@ public class Lexer {
 
             // Ujami vse znake, ki so lahko samo en char
             else if (single_char_lexems.containsKey(source.charAt(i))) {
-                symbols.add(new Symbol(new Position(k, j, k, j), single_char_lexems.get(source.charAt(i)),
+                symbols.add(new Symbol(new Position(inline_start_index, line_index, inline_start_index, line_index), single_char_lexems.get(source.charAt(i)),
                         Character.toString(source.charAt(i))));
             }
 
@@ -191,18 +197,20 @@ public class Lexer {
                 while (Character.isDigit(source.charAt(i + 1))) {
                     tempString += source.charAt(i + 1);
                     i++;
+                    inline_stop_index++;
                 }
-                symbols.add(new Symbol(new Position(k, j, i, j), C_INTEGER, tempString));
-                k = i;
+                symbols.add(new Symbol(new Position(inline_start_index, line_index, inline_stop_index, line_index), C_INTEGER, tempString));
+                inline_start_index = inline_stop_index;
             }
 
             // Keywords in imena
             else {
                 tempString = "";
                 tempString += source.charAt(i);
-                while (Character.isLetterOrDigit(source.charAt(i + 1)) || (int) source.charAt(i) == 95) {
+                while (Character.isLetterOrDigit(source.charAt(i + 1)) || (int) source.charAt(i + 1) == 95) {
                     tempString += source.charAt(i + 1);
                     i++;
+                    inline_stop_index++;
                 }
                 TokenType t;
                 // Preveri ali je keyword
@@ -223,8 +231,8 @@ public class Lexer {
                 else
                     t = IDENTIFIER;
 
-                symbols.add(new Symbol(new Position(k, j, i, j), t, tempString));
-                k = i;
+                symbols.add(new Symbol(new Position(inline_start_index, line_index, inline_stop_index, line_index), t, tempString));
+                inline_start_index = inline_stop_index;
             }
 
         }

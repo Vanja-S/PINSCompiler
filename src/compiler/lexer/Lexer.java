@@ -120,7 +120,8 @@ public class Lexer {
         boolean comment = false;
         String tempString = "";
 
-        for (int i = 0, line_index = 1, inline_start_index = 1, inline_stop_index = 1; i < source.length(); i++, inline_start_index++, inline_stop_index++) {
+        for (int i = 0, line_index = 1, inline_start_index = 1,
+                inline_stop_index = 1; i < source.length(); i++, inline_start_index++, inline_stop_index++) {
             // Newline karakterji
             if ((int) source.charAt(i) == 0xa || (int) source.charAt(i) == 0xd) {
                 line_index++;
@@ -133,7 +134,8 @@ public class Lexer {
             }
 
             else if (source.charAt(i) == '$') {
-                symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_start_index), EOF, "$"));
+                symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_start_index),
+                        EOF, "$"));
             }
 
             else if (comment)
@@ -163,8 +165,8 @@ public class Lexer {
                 tempString += "\'";
                 i++;
                 inline_stop_index++;
-                symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index), C_STRING, tempString));
-                inline_start_index = inline_stop_index;
+                symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index),
+                        C_STRING, tempString));
             }
 
             // Belo besedilo vržemo ven
@@ -178,18 +180,19 @@ public class Lexer {
                     StringBuffer token_key = new StringBuffer().append(source.charAt(i)).append(source.charAt(i + 1));
                     i++;
                     inline_stop_index++;
-                    symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index), multi_char_op.get(token_key.toString()), token_key.toString()));
+                    symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index),
+                            multi_char_op.get(token_key.toString()), token_key.toString()));
                 } else {
                     symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index),
                             multi_char_op.get(Character.toString(source.charAt(i))),
                             Character.toString(source.charAt(i))));
                 }
-                inline_start_index = inline_stop_index;
             }
 
             // Ujami vse znake, ki so lahko samo en char
             else if (single_char_lexems.containsKey(source.charAt(i))) {
-                symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_start_index), single_char_lexems.get(source.charAt(i)),
+                symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_start_index),
+                        single_char_lexems.get(source.charAt(i)),
                         Character.toString(source.charAt(i))));
             }
 
@@ -202,8 +205,8 @@ public class Lexer {
                     i++;
                     inline_stop_index++;
                 }
-                symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index), C_INTEGER, tempString));
-                inline_start_index = inline_stop_index;
+                symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index),
+                        C_INTEGER, tempString));
             }
 
             // Keywords in imena
@@ -215,29 +218,30 @@ public class Lexer {
                     i++;
                     inline_stop_index++;
                 }
-                TokenType t;
                 // Preveri ali je keyword
                 if (keywordMapping.containsKey(tempString)) {
-                    t = keywordMapping.get(tempString);
+                    TokenType t = keywordMapping.get(tempString);
                 }
 
                 // Preveri ali je podatkovni tip
                 else if (data_types.containsKey(tempString)) {
-                    t = data_types.get(tempString);
+                    TokenType t = data_types.get(tempString);
                 }
 
                 // Preveri če je true ali false vrednost
-                else if (tempString.equals("true") || tempString.equals("false"))
-                    t = C_LOGICAL;
+                else if (tempString.equals("true") || tempString.equals("false")) {
+                    TokenType t = C_LOGICAL;
+                }
 
                 // Če ne, je ime
-                else
-                    t = IDENTIFIER;
+                else {
+                    TokenType t = IDENTIFIER;
+                }
 
-                symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index), t, tempString));
-                inline_start_index = inline_stop_index;
+                symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index), t,
+                        tempString));
             }
-
+            inline_start_index = inline_stop_index;
         }
         return symbols;
     }

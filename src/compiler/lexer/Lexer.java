@@ -124,14 +124,16 @@ public class Lexer {
             // Newline karakterji
             if ((int) source.charAt(i) == 0xa || (int) source.charAt(i) == 0xd) {
                 line_index++;
-                inline_start_index = 1;
-                inline_stop_index = 1;
+                // Te dva indexa dam na 0, ker se newline porabi kot char in naslednjo
+                // loop iteracijo se povečata za 1
+                inline_start_index = 0;
+                inline_stop_index = 0;
                 comment = false;
                 continue;
             }
 
             else if (source.charAt(i) == '$') {
-                symbols.add(new Symbol(new Position(inline_start_index, line_index, inline_start_index, line_index), EOF, "$"));
+                symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_start_index), EOF, "$"));
             }
 
             else if (comment)
@@ -161,7 +163,7 @@ public class Lexer {
                 tempString += "\'";
                 i++;
                 inline_stop_index++;
-                symbols.add(new Symbol(new Position(inline_start_index, line_index, inline_stop_index, line_index), C_STRING, tempString));
+                symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index), C_STRING, tempString));
                 inline_start_index = inline_stop_index;
             }
 
@@ -175,10 +177,10 @@ public class Lexer {
                 if (source.charAt(i + 1) == '=') {
                     StringBuffer token_key = new StringBuffer().append(source.charAt(i)).append(source.charAt(i + 1));
                     i++;
-                    inline_start_index++;
-                    symbols.add(new Symbol(new Position(inline_start_index - 1, line_index, inline_start_index, line_index), multi_char_op.get(token_key.toString()), token_key.toString()));
+                    inline_stop_index++;
+                    symbols.add(new Symbol(new Position(line_index, inline_start_index - 1, line_index, inline_stop_index), multi_char_op.get(token_key.toString()), token_key.toString()));
                 } else {
-                    symbols.add(new Symbol(new Position(inline_start_index, line_index, inline_start_index, line_index),
+                    symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index),
                             multi_char_op.get(Character.toString(source.charAt(i))),
                             Character.toString(source.charAt(i))));
                 }
@@ -186,7 +188,7 @@ public class Lexer {
 
             // Ujami vse znake, ki so lahko samo en char
             else if (single_char_lexems.containsKey(source.charAt(i))) {
-                symbols.add(new Symbol(new Position(inline_start_index, line_index, inline_start_index, line_index), single_char_lexems.get(source.charAt(i)),
+                symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_start_index), single_char_lexems.get(source.charAt(i)),
                         Character.toString(source.charAt(i))));
             }
 
@@ -199,7 +201,7 @@ public class Lexer {
                     i++;
                     inline_stop_index++;
                 }
-                symbols.add(new Symbol(new Position(inline_start_index, line_index, inline_stop_index, line_index), C_INTEGER, tempString));
+                symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index), C_INTEGER, tempString));
                 inline_start_index = inline_stop_index;
             }
 
@@ -231,7 +233,7 @@ public class Lexer {
                 else
                     t = IDENTIFIER;
 
-                symbols.add(new Symbol(new Position(inline_start_index, line_index, inline_stop_index, line_index), t, tempString));
+                symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index), t, tempString));
                 inline_start_index = inline_stop_index;
             }
 

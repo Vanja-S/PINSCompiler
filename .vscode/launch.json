@@ -16,7 +16,7 @@
             "request": "launch",
             "mainClass": "Main",
             "projectName": "PINS-compiler_7d951449",
-            "args": "PINS test.pns"
+            "args": "PINS test2.pns"
         }
     ]
 }

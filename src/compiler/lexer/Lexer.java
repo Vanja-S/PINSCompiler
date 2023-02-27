@@ -238,17 +238,14 @@ public class Lexer {
         if (keywordMapping.containsKey(tempString)) {
             return keywordMapping.get(tempString);
         }
-
         // Preveri ali je podatkovni tip
         else if (data_types.containsKey(tempString)) {
             return data_types.get(tempString);
         }
-
         // Preveri če je true ali false vrednost
         else if (tempString.equals("true") || tempString.equals("false")) {
             return C_LOGICAL;
         }
-
         // Če ne, je ime
         else {
             return IDENTIFIER;

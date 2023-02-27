@@ -210,6 +210,9 @@ public class Lexer {
                     i++;
                     inline_stop_index++;
                 }
+                if(!Character.isDigit(source.charAt(i))) {
+                    Report.error(new Position(line_index, inline_start_index, line_index, inline_stop_index), "Ime se ne sme začeti z številom, ali pa število ne sme vsebovati črke");
+                }
                 symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index),
                         C_INTEGER, tempString));
             }

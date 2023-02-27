@@ -7,15 +7,11 @@ package compiler.lexer;
 
 import static common.RequireNonNull.requireNonNull;
 import static compiler.lexer.TokenType.*;
-import compiler.lexer.Position.Location;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.StringTokenizer;
-
-import javax.swing.text.html.InlineView;
 
 import common.Report;
 
@@ -117,6 +113,7 @@ public class Lexer {
      */
     public List<Symbol> scan() {
         var symbols = new ArrayList<Symbol>();
+        // Spremenljivke za grajenje leksemov
         boolean comment = false;
         String tempString = "";
 
@@ -161,6 +158,9 @@ public class Lexer {
                         tempString += source.charAt(i + 1);
                         i += 2;
                         inline_stop_index += 2;
+                    } else if (source.charAt(i + 1) == '\n') {
+                        Report.error(new Position(line_index, inline_start_index, line_index, inline_stop_index),
+                                "String, se ne zaključi z končnim \' znakom!");
                     } else {
                         tempString += source.charAt(i + 1);
                         i++;
@@ -223,32 +223,35 @@ public class Lexer {
                     i++;
                     inline_stop_index++;
                 }
-                TokenType t;
-                // Preveri ali je keyword
-                if (keywordMapping.containsKey(tempString)) {
-                    t = keywordMapping.get(tempString);
-                }
+                TokenType tkn_Type = assignTokenType(tempString);
 
-                // Preveri ali je podatkovni tip
-                else if (data_types.containsKey(tempString)) {
-                    t = data_types.get(tempString);
-                }
-
-                // Preveri če je true ali false vrednost
-                else if (tempString.equals("true") || tempString.equals("false")) {
-                    t = C_LOGICAL;
-                }
-
-                // Če ne, je ime
-                else {
-                    t = IDENTIFIER;
-                }
-
-                symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index), t,
+                symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index), tkn_Type,
                         tempString));
             }
             inline_start_index = inline_stop_index;
         }
         return symbols;
+    }
+
+    private static TokenType assignTokenType(String tempString) {
+        // Preveri ali je keyword
+        if (keywordMapping.containsKey(tempString)) {
+            return keywordMapping.get(tempString);
+        }
+
+        // Preveri ali je podatkovni tip
+        else if (data_types.containsKey(tempString)) {
+            return data_types.get(tempString);
+        }
+
+        // Preveri če je true ali false vrednost
+        else if (tempString.equals("true") || tempString.equals("false")) {
+            return C_LOGICAL;
+        }
+
+        // Če ne, je ime
+        else {
+            return IDENTIFIER;
+        }
     }
 }

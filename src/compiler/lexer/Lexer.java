@@ -122,8 +122,13 @@ public class Lexer {
 
         for (int i = 0, line_index = 1, inline_start_index = 1,
                 inline_stop_index = 1; i < source.length(); i++, inline_start_index++, inline_stop_index++) {
-            // Newline karakterji
-            if ((int) source.charAt(i) == 0xa || (int) source.charAt(i) == 0xd) {
+
+            // CR char spregledamo
+            if ((int) source.charAt(i) == 0xd) {
+                continue;
+            }
+            // Newline karakter
+            else if ((int) source.charAt(i) == 0xa) {
                 line_index++;
                 // Te dva indexa dam na 0, ker se newline porabi kot char in naslednjo
                 // loop iteracijo se povečata za 1
@@ -218,24 +223,25 @@ public class Lexer {
                     i++;
                     inline_stop_index++;
                 }
+                TokenType t;
                 // Preveri ali je keyword
                 if (keywordMapping.containsKey(tempString)) {
-                    TokenType t = keywordMapping.get(tempString);
+                    t = keywordMapping.get(tempString);
                 }
 
                 // Preveri ali je podatkovni tip
                 else if (data_types.containsKey(tempString)) {
-                    TokenType t = data_types.get(tempString);
+                    t = data_types.get(tempString);
                 }
 
                 // Preveri če je true ali false vrednost
                 else if (tempString.equals("true") || tempString.equals("false")) {
-                    TokenType t = C_LOGICAL;
+                    t = C_LOGICAL;
                 }
 
                 // Če ne, je ime
                 else {
-                    TokenType t = IDENTIFIER;
+                    t = IDENTIFIER;
                 }
 
                 symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index), t,

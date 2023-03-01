@@ -106,14 +106,14 @@ public class Lexer {
         this.source = source;
     }
 
+    // Števci za branje
+    private static int i = 0, line_index = 1, inline_start_index = 1, inline_stop_index = 1;
+
     /**
      * Izvedi leksikalno analizo.
      * 
      * @return seznam leksikalnih simbolov.
      */
-
-    private static int i = 0, line_index = 1, inline_start_index = 1, inline_stop_index = 1;
-
     public List<Symbol> scan() {
         var symbols = new ArrayList<Symbol>();
         // Spremenljivke za grajenje leksemov

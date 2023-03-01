@@ -111,14 +111,15 @@ public class Lexer {
      * 
      * @return seznam leksikalnih simbolov.
      */
+
+    private static int i = 0, line_index = 1, inline_start_index = 1, inline_stop_index = 1;
+
     public List<Symbol> scan() {
         var symbols = new ArrayList<Symbol>();
         // Spremenljivke za grajenje leksemov
         boolean comment = false;
-        String tempString = "";
 
-        for (int i = 0, line_index = 1, inline_start_index = 1,
-                inline_stop_index = 1; i < source.length(); i++, inline_start_index++, inline_stop_index++) {
+        for (; i < source.length(); i++, inline_start_index++, inline_stop_index++) {
 
             // CR char spregledamo
             if ((int) source.charAt(i) == 0xd) {
@@ -151,27 +152,7 @@ public class Lexer {
             // Največja prednost gre string-om
             // Tukaj jih sparsamo
             else if (source.charAt(i) == '\'') {
-                tempString = "";
-                tempString += source.charAt(i);
-                while (source.charAt(i + 1) != '\'' || (source.charAt(i + 1) == '\'' && source.charAt(i + 2) == '\'')) {
-                    if (source.charAt(i + 1) == '\'') {
-                        tempString += source.charAt(i + 1);
-                        i += 2;
-                        inline_stop_index += 2;
-                    } else if (source.charAt(i + 1) == '\n') {
-                        Report.error(new Position(line_index, inline_start_index, line_index, inline_stop_index),
-                                "String, se ne zaključi z končnim \' znakom!");
-                    } else {
-                        tempString += source.charAt(i + 1);
-                        i++;
-                        inline_stop_index++;
-                    }
-                }
-                tempString += "\'";
-                i++;
-                inline_stop_index++;
-                symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index),
-                        C_STRING, tempString));
+                symbols.add(parseString(source, i, inline_start_index, inline_stop_index, line_index));
             }
 
             // Belo besedilo vržemo ven
@@ -181,17 +162,7 @@ public class Lexer {
 
             // Operatorji
             else if (multi_char_op.containsKey(Character.toString(source.charAt(i)))) {
-                if (source.charAt(i + 1) == '=') {
-                    StringBuffer token_key = new StringBuffer().append(source.charAt(i)).append(source.charAt(i + 1));
-                    i++;
-                    inline_stop_index++;
-                    symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index),
-                            multi_char_op.get(token_key.toString()), token_key.toString()));
-                } else {
-                    symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index),
-                            multi_char_op.get(Character.toString(source.charAt(i))),
-                            Character.toString(source.charAt(i))));
-                }
+                symbols.add(parseMultiCharOperators(source, i, inline_start_index, inline_stop_index, line_index));
             }
 
             // Ujami vse znake, ki so lahko samo en char
@@ -203,37 +174,91 @@ public class Lexer {
 
             // Števila
             else if (Character.isDigit(source.charAt(i))) {
-                tempString = "";
-                tempString += source.charAt(i);
-                while (Character.isDigit(source.charAt(i + 1))) {
-                    tempString += source.charAt(i + 1);
-                    i++;
-                    inline_stop_index++;
-                }
-                if(!Character.isDigit(source.charAt(i))) {
-                    Report.error(new Position(line_index, inline_start_index, line_index, inline_stop_index), "Ime se ne sme začeti z številom, ali pa število ne sme vsebovati črke");
-                }
-                symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index),
-                        C_INTEGER, tempString));
+                symbols.add(parseInteger(source, i, inline_start_index, inline_stop_index, line_index));
             }
 
             // Keywords in imena
             else {
-                tempString = "";
-                tempString += source.charAt(i);
-                while (Character.isLetterOrDigit(source.charAt(i + 1)) || (int) source.charAt(i + 1) == 95) {
-                    tempString += source.charAt(i + 1);
-                    i++;
-                    inline_stop_index++;
-                }
-                TokenType tkn_Type = assignTokenType(tempString);
-
-                symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index), tkn_Type,
-                        tempString));
+                symbols.add(parseKeywordOrIdentifier(source, i, inline_start_index, inline_stop_index, line_index));
             }
             inline_start_index = inline_stop_index;
         }
         return symbols;
+    }
+
+    private static Symbol parseString(String source, int i, int inline_start_index, int inline_stop_index,
+            int line_index) {
+        String tempString = "";
+        tempString += source.charAt(i);
+        while (source.charAt(i + 1) != '\'' || (source.charAt(i + 1) == '\'' && source.charAt(i + 2) == '\'')) {
+            if (source.charAt(i + 1) == '\'') {
+                tempString += source.charAt(i + 1);
+                i += 2;
+                inline_stop_index += 2;
+            } 
+            //else if (source.charAt(i + 1) == '\n') {
+            //   Report.error(new Position(line_index, inline_start_index, line_index, inline_stop_index),
+            //            "String, se ne zaključi z končnim \' znakom!");
+            //} 
+            else {
+                tempString += source.charAt(i + 1);
+                i++;
+                inline_stop_index++;
+            }
+        }
+        tempString += "\'";
+        i++;
+        inline_stop_index++;
+        return (new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index),
+                C_STRING, tempString));
+    }
+
+    private static Symbol parseMultiCharOperators(String source, int i, int inline_start_index, int inline_stop_index,
+            int line_index) {
+        if (source.charAt(i + 1) == '=') {
+            StringBuffer token_key = new StringBuffer().append(source.charAt(i)).append(source.charAt(i + 1));
+            i++;
+            inline_stop_index++;
+            return (new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index),
+                    multi_char_op.get(token_key.toString()), token_key.toString()));
+        } else {
+            return (new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index),
+                    multi_char_op.get(Character.toString(source.charAt(i))),
+                    Character.toString(source.charAt(i))));
+        }
+    }
+
+    private static Symbol parseInteger(String source, int i, int inline_start_index, int inline_stop_index,
+            int line_index) {
+        String tempString = "";
+        tempString += source.charAt(i);
+        while (Character.isDigit(source.charAt(i + 1))) {
+            tempString += source.charAt(i + 1);
+            i++;
+            inline_stop_index++;
+        }
+        if (!Character.isDigit(source.charAt(i))) {
+            Report.error(new Position(line_index, inline_start_index, line_index, inline_stop_index),
+                    "Ime se ne sme začeti z številom, ali pa število ne sme vsebovati črke");
+        }
+        return (new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index),
+                C_INTEGER, tempString));
+    }
+
+    private static Symbol parseKeywordOrIdentifier(String source, int i, int inline_start_index, int inline_stop_index,
+            int line_indexs) {
+        String tempString = "";
+        tempString += source.charAt(i);
+        while (Character.isLetterOrDigit(source.charAt(i + 1)) || (int) source.charAt(i + 1) == 95) {
+            tempString += source.charAt(i + 1);
+            i++;
+            inline_stop_index++;
+        }
+        TokenType tkn_Type = assignTokenType(tempString);
+
+        return (new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index),
+                tkn_Type,
+                tempString));
     }
 
     private static TokenType assignTokenType(String tempString) {

@@ -195,10 +195,10 @@ public class Lexer {
                 i += 2;
                 inline_stop_index += 2;
             } 
-            //else if (source.charAt(i + 1) == '\n') {
-            //   Report.error(new Position(line_index, inline_start_index, line_index, inline_stop_index),
-            //            "String, se ne zaključi z končnim \' znakom!");
-            //} 
+            else if (source.charAt(i + 1) == '\n') {
+              Report.error(new Position(line_index, inline_start_index, line_index, inline_stop_index),
+                       "String, se ne zaključi z končnim \' znakom!");
+            } 
             else {
                 tempString += source.charAt(i + 1);
                 i++;

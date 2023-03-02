@@ -136,11 +136,6 @@ public class Lexer {
                 continue;
             }
 
-            else if (source.charAt(i) == '$') {
-                symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_start_index),
-                        EOF, "$"));
-            }
-            
             else if (comment)
                 continue;
 
@@ -157,6 +152,10 @@ public class Lexer {
 
             // Belo besedilo vržemo ven
             else if (Character.isWhitespace(source.charAt(i))) {
+                if (source.charAt(i) == '\t') {
+                    inline_stop_index += 3;
+                    inline_start_index = inline_stop_index;
+                }
                 continue;
             }
 
@@ -167,7 +166,7 @@ public class Lexer {
 
             // Ujami vse znake, ki so lahko samo en char
             else if (single_char_lexems.containsKey(source.charAt(i))) {
-                symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_start_index),
+                symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index),
                         single_char_lexems.get(source.charAt(i)),
                         Character.toString(source.charAt(i))));
             }
@@ -183,29 +182,33 @@ public class Lexer {
             }
             inline_start_index = inline_stop_index;
         }
+        symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index), EOF, "$"));
         return symbols;
     }
 
     private static Symbol parseString(String source) {
         String tempString = "";
         tempString += source.charAt(i);
-        while (source.charAt(i + 1) != '\'' || (source.charAt(i + 1) == '\'' && source.charAt(i + 2) == '\'')) {
+        while ((i + 1) < source.length() && (i + 2) < source.length()
+                && (source.charAt(i + 1) != '\'' || (source.charAt(i + 1) == '\'' && source.charAt(i + 2) == '\''))) {
             if (source.charAt(i + 1) == '\'') {
                 tempString += source.charAt(i + 1);
                 i += 2;
                 inline_stop_index += 2;
-            } 
-            else if (source.charAt(i + 1) == '\n') {
-              Report.error(new Position(line_index, inline_start_index, line_index, inline_stop_index),
-                       "String, se ne zaključi z končnim \' znakom!");
-            } 
-            else {
+            } else if (source.charAt(i + 1) == '\n') {
+                Report.error(new Position(line_index, inline_start_index, line_index, inline_stop_index),
+                        "String, se ne zaključi z končnim \' znakom!");
+            } else {
                 tempString += source.charAt(i + 1);
                 i++;
                 inline_stop_index++;
             }
         }
-        tempString += "\'";
+        if ((i + 1) < source.length() && source.charAt(i + 1) == '\'')
+            tempString += "\'";
+        else
+            Report.error(new Position(line_index, inline_start_index, line_index, inline_stop_index),
+                    "String, se ne zaključi z končnim \' znakom!");
         i++;
         inline_stop_index++;
         return (new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index),
@@ -213,7 +216,7 @@ public class Lexer {
     }
 
     private static Symbol parseMultiCharOperators(String source) {
-        if (source.charAt(i + 1) == '=') {
+        if ((i + 1) < source.length() && source.charAt(i + 1) == '=') {
             StringBuffer token_key = new StringBuffer().append(source.charAt(i)).append(source.charAt(i + 1));
             i++;
             inline_stop_index++;
@@ -229,7 +232,7 @@ public class Lexer {
     private static Symbol parseInteger(String source) {
         String tempString = "";
         tempString += source.charAt(i);
-        while (Character.isDigit(source.charAt(i + 1))) {
+        while ((i + 1) < source.length() && Character.isDigit(source.charAt(i + 1))) {
             tempString += source.charAt(i + 1);
             i++;
             inline_stop_index++;
@@ -245,13 +248,13 @@ public class Lexer {
     private static Symbol parseKeywordOrIdentifier(String source) {
         String tempString = "";
         tempString += source.charAt(i);
-        while (Character.isLetterOrDigit(source.charAt(i + 1)) || (int) source.charAt(i + 1) == 95) {
+        while ((i + 1) < source.length()
+                && (Character.isLetterOrDigit(source.charAt(i + 1)) || (int) source.charAt(i + 1) == 95)) {
             tempString += source.charAt(i + 1);
             i++;
             inline_stop_index++;
         }
         TokenType tkn_Type = assignTokenType(tempString);
-
         return (new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index),
                 tkn_Type,
                 tempString));

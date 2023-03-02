@@ -1,6 +1,1 @@
-{
-	if(i == 10) then
-		integer x = 4;
-	else
-		string str = 'Tvoja ''Mami''';
-}
+    'danes je ''lep'' dan'

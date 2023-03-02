@@ -189,7 +189,7 @@ public class Lexer {
     private static Symbol parseString(String source) {
         String tempString = "";
         tempString += source.charAt(i);
-        while ((i + 1) < source.length() && (i + 2) < source.length()
+        while ((i + 2) < source.length()
                 && (source.charAt(i + 1) != '\'' || (source.charAt(i + 1) == '\'' && source.charAt(i + 2) == '\''))) {
             if (source.charAt(i + 1) == '\'') {
                 tempString += source.charAt(i + 1);

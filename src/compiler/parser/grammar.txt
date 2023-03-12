@@ -1,0 +1,78 @@
+s -> defs .
+
+defs -> def defs_1.
+defs_1 -> ; def defs_1 |  .
+
+def -> type_def .
+def -> fun_def .
+def -> var_def .
+
+type_def -> typ id : type .
+type -> id .
+
+type -> log .
+type -> int .
+type -> str .
+type -> arr [ int_const ] type .
+
+fun_def -> fun id ( params ) : type = expr .
+
+params -> param params_1.
+params_1 -> , param param_1 | .
+
+param -> id : type .
+
+expr -> log_ior_expr expr_1.
+expr_1 -> { WHERE defs } | .
+
+log_ior_expr -> log_and_expr log_ior_expr_1 '|' log_and_expr .
+log_ior_expr_1 -> '|' log_and_expr log_ior_expr_1 | .
+
+log_and_expr -> comp_expr & log_and_expr | comp_expr .
+
+comp_expr -> addit_expr == addit_expr .
+comp_expr -> addit_expr != addit_expr .
+comp_expr -> addit_expr <= addit_expr .
+comp_expr -> addit_expr >= addit_expr .
+comp_expr -> addit_expr < addit_expr .
+comp_expr -> addit_expr < addit_expr .
+comp_expr -> addit_expr .
+
+# LEVA rekurzija
+addit_expr -> addit_expr + mult_expr .
+addit_expr -> addit_expr - mult_expr .
+addit_expr -> mult_expr .
+
+# LEVA rekurzija
+mult_expr -> mult_expr * prefix_expr .
+mult_expr -> mult_expr / prefix_expr .
+mult_expr -> mult_expr % prefix_expr .
+mult_expr -> prefix_expr .
+
+prefix_expr -> + prefix_expr .
+prefix_expr -> - prefix_expr .
+prefix_expr -> ! prefix_expr .
+prefix_expr -> postfix_expr .
+
+# LEVA rekurzija
+postfix_expr -> postfix_expr [ expr ] .
+postfix_expr -> atom_expr .
+
+atom_expr -> log_const .
+atom_expr -> int_const .
+atom_expr -> str_const .
+atom_expr -> id atmo_expr_id .
+atmo_expr_id -> ( exprs ) | .
+atom_expr -> { expr = expr } .
+
+atom_expr -> { if expr then expr if_else } .
+if_else -> else expr | .
+
+atom_expr -> { while expr : expr } .
+atom_expr -> { for id = expr , expr , expr : expr } .
+atom_expr -> ( exprs ) .
+
+exprs -> expr exprs_1.
+exprs_1 -> , expr exprs_1 | .
+
+var_def -> var id : type .

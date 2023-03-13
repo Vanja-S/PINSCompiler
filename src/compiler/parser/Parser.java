@@ -12,6 +12,7 @@ import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Optional;
 
 import javax.lang.model.util.ElementScanner14;
@@ -48,31 +49,32 @@ public class Parser {
 
     private void parseSource() {
         dump("source -> definitions");
-        Iterator<Symbol> symbol_iterator = symbols.iterator();
+        ListIterator<Symbol> symbol_iterator = symbols.listIterator();
         parseDefs(symbol_iterator);
+        Symbol curr_sym = symbol_iterator.next();
+        if (symbol_iterator.hasNext() && curr_sym.tokenType != TokenType.EOF)
+            Report.error(curr_sym.position, "There is no EOF at the end of file");
     }
 
-    private void parseDefs(Iterator<Symbol> lexicalSymbol) {
+    private void parseDefs(ListIterator<Symbol> lexicalSymbol) {
         dump("definitions -> definition definitions_1");
-        while (lexicalSymbol.hasNext()) {
-            parseDef(lexicalSymbol);
-            if (lexicalSymbol.next().tokenType == TokenType.OP_SEMICOLON) {
-                parseDefs_1(lexicalSymbol);
-            }
+        parseDef(lexicalSymbol);
+        if (lexicalSymbol.next().tokenType == TokenType.OP_SEMICOLON) {
+            parseDefs_1(lexicalSymbol);
         }
+        else lexicalSymbol.previous();
     }
 
-    private void parseDefs_1(Iterator<Symbol> lexicalSymbol) {
-        dump("definitions_1 -> ; definition definitions_1 | ");
-        while (lexicalSymbol.hasNext()) {
-            parseDef(lexicalSymbol);
-            if (lexicalSymbol.next().tokenType == TokenType.OP_SEMICOLON) {
-                parseDefs_1(lexicalSymbol);
-            }
+    private void parseDefs_1(ListIterator<Symbol> lexicalSymbol) {
+        dump("definitions_1 -> ; definition definitions_1 | ε");
+        parseDef(lexicalSymbol);
+        if (lexicalSymbol.next().tokenType == TokenType.OP_SEMICOLON) {
+            parseDefs_1(lexicalSymbol);
         }
+        else lexicalSymbol.previous();
     }
 
-    private void parseDef(Iterator<Symbol> lexicalSymbol) {
+    private void parseDef(ListIterator<Symbol> lexicalSymbol) {
         Symbol currentLexicalSym = lexicalSymbol.next();
         if (currentLexicalSym.tokenType == TokenType.KW_TYP) {
             dump("definition -> type_definition");
@@ -87,7 +89,7 @@ public class Parser {
             Report.error(currentLexicalSym.position, "Wrong definition statment");
     }
 
-    private void parseTypeDef(Iterator<Symbol> lexicalSymbol) {
+    private void parseTypeDef(ListIterator<Symbol> lexicalSymbol) {
         dump("type_definition -> typ id : type");
         Symbol currentLexicalSym = lexicalSymbol.next();
         if (currentLexicalSym.tokenType != TokenType.IDENTIFIER)
@@ -98,7 +100,7 @@ public class Parser {
         parseType(lexicalSymbol);
     }
 
-    private void parseType(Iterator<Symbol> lexicalSymbol) {
+    private void parseType(ListIterator<Symbol> lexicalSymbol) {
         Symbol currentLexicalSym = lexicalSymbol.next();
         if (currentLexicalSym.tokenType == TokenType.IDENTIFIER)
             dump("type -> id");
@@ -123,7 +125,7 @@ public class Parser {
         }
     }
 
-    private void parseFunDef(Iterator<Symbol> lexicalSymbol) {
+    private void parseFunDef(ListIterator<Symbol> lexicalSymbol) {
         dump("function_definition -> fun id ( parameters ) : type = expression");
         Symbol currentLexicalSym = lexicalSymbol.next();
         if (currentLexicalSym.tokenType != TokenType.IDENTIFIER)
@@ -150,13 +152,36 @@ public class Parser {
         parseExpression(lexicalSymbol);
     }
 
-    private void parseParams(Iterator<Symbol> lexicalSymbol) {
-        dump("parameters -> parameter parameters_1");
-        parseParam(lexicalSymbol);
-        // TODO: parse params_1 production
+    private void parseExpression(ListIterator<Symbol> lexicalSymbol) {
+        parseLogicalOrExpression(lexicalSymbol);
     }
 
-    private void parseParam(Iterator<Symbol> lexicalSymbol) {
+    private void parseLogicalOrExpression(ListIterator<Symbol> lexicalSymbol) {
+
+    }
+
+    private void parseParams(ListIterator<Symbol> lexicalSymbol) {
+        dump("parameters -> parameter parameters_1");
+        parseParam(lexicalSymbol);
+        Symbol currentLexicalSym = lexicalSymbol.next();
+        dump("parameters_1 -> , parameter parameters_1 | ε");
+        if (currentLexicalSym.tokenType == TokenType.OP_COMMA)
+            parseParams_1(lexicalSymbol);
+        else
+            lexicalSymbol.previous();
+    }
+
+    private void parseParams_1(ListIterator<Symbol> lexicalSymbol) {
+        parseParam(lexicalSymbol);
+        Symbol currentLexicalSym = lexicalSymbol.next();
+        dump("parameters_1 -> , parameter parameters_1 | ε");
+        if (currentLexicalSym.tokenType == TokenType.OP_COMMA)
+            parseParams_1(lexicalSymbol);
+        else
+            lexicalSymbol.previous();
+    }
+
+    private void parseParam(ListIterator<Symbol> lexicalSymbol) {
         dump("parameter -> id : type");
         Symbol currentLexicalSym = lexicalSymbol.next();
         if (currentLexicalSym.tokenType != TokenType.IDENTIFIER)
@@ -167,7 +192,7 @@ public class Parser {
         parseType(lexicalSymbol);
     }
 
-    private void parseVarDef(Iterator<Symbol> lexicalSymbol) {
+    private void parseVarDef(ListIterator<Symbol> lexicalSymbol) {
         Symbol currentLexicalSym = lexicalSymbol.next();
         dump("variable_definition -> var id : type");
         if (currentLexicalSym.tokenType != TokenType.IDENTIFIER)

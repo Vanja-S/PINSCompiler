@@ -420,25 +420,40 @@ public class Parser {
         Symbol currentLexicalSym = lexicalSymbol.next();
         switch (currentLexicalSym.tokenType) {
             case KW_IF:
-                dump("atom_expression_lbrace_1 -> if expression then expression if_else \'}\'")
+                dump("atom_expression_lbrace_1 -> if expression then expression if_else \'}\'");
                 parseExpression(lexicalSymbol);
                 currentLexicalSym = lexicalSymbol.next();
-                if(currentLexicalSym.tokenType != TokenType.KW_THEN) 
-                    Report.error(currentLexicalSym.position, "In the if statement after condition a then keyword should follow");
+                if (currentLexicalSym.tokenType != TokenType.KW_THEN)
+                    Report.error(currentLexicalSym.position,
+                            "In the if statement after condition a then keyword should follow");
                 parseExpression(lexicalSymbol);
                 currentLexicalSym = lexicalSymbol.next();
-                if(currentLexicalSym.tokenType != TokenType.OP_RBRACE) {
+                if (currentLexicalSym.tokenType != TokenType.OP_RBRACE) {
                     dump("if_else -> else expression");
                     lexicalSymbol.previous();
                     parseIfElse(lexicalSymbol);
-                }
+                } else
+                    dump("if_else -> ε");
+                currentLexicalSym = lexicalSymbol.next();
+                if(currentLexicalSym.tokenType != TokenType.OP_RBRACE) 
+                    Report.error(currentLexicalSym.position, "The if statment should be closed with a right brace");
+                break;
+            // TODO:
+            case KW_WHILE:
+            // Parse while
+                break;
+            case KW_FOR:
+            // Parse for 
+                break;
+            default:
+            // Parse expression = expression }
                 break;
         }
     }
 
     private void parseIfElse(ListIterator<Symbol> lexicalSymbol) {
         Symbol currentLexicalSym = lexicalSymbol.next();
-        if(currentLexicalSym.tokenType != TokenType.KW_ELSE)
+        if (currentLexicalSym.tokenType != TokenType.KW_ELSE)
             Report.error(currentLexicalSym.position, "Either else statement or closing right brace expected");
         parseExpression(lexicalSymbol);
     }

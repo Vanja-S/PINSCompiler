@@ -9,16 +9,9 @@ import static compiler.lexer.TokenType.*;
 import static common.RequireNonNull.requireNonNull;
 
 import java.io.PrintStream;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Optional;
-
-import javax.lang.model.util.ElementScanner14;
-import javax.sound.sampled.LineEvent;
-
-import org.xml.sax.ext.LexicalHandler;
 
 import common.Report;
 import compiler.lexer.Position;
@@ -435,18 +428,63 @@ public class Parser {
                 } else
                     dump("if_else -> ε");
                 currentLexicalSym = lexicalSymbol.next();
-                if(currentLexicalSym.tokenType != TokenType.OP_RBRACE) 
+                if (currentLexicalSym.tokenType != TokenType.OP_RBRACE)
                     Report.error(currentLexicalSym.position, "The if statment should be closed with a right brace");
                 break;
-            // TODO:
             case KW_WHILE:
-            // Parse while
+                dump("atom_expression_lbrace_1 -> while expression \':\' expression \'}\' .");
+                parseExpression(lexicalSymbol);
+                currentLexicalSym = lexicalSymbol.next();
+                if (currentLexicalSym.tokenType != TokenType.OP_COLON)
+                    Report.error(currentLexicalSym.position, "After while condition a colon should follow");
+                parseExpression(lexicalSymbol);
+                currentLexicalSym = lexicalSymbol.next();
+                if (currentLexicalSym.tokenType != TokenType.OP_LBRACE)
+                    Report.error(currentLexicalSym.position,
+                            "After while body expression a right brace should close it");
                 break;
             case KW_FOR:
-            // Parse for 
+                dump("atom_expression_lbrace_1 -> for id \'=\' expression \',\' expression \',\' expression \':\' expression \'}\'");
+                currentLexicalSym = lexicalSymbol.next();
+                if (currentLexicalSym.tokenType != TokenType.IDENTIFIER)
+                    Report.error(currentLexicalSym.position, "Following a for keyword an identifier is required");
+                currentLexicalSym = lexicalSymbol.next();
+                if (currentLexicalSym.tokenType != TokenType.OP_ASSIGN)
+                    Report.error(currentLexicalSym.position,
+                            "Following a for identifier an assignment operator is required");
+                parseExpression(lexicalSymbol);
+                currentLexicalSym = lexicalSymbol.next();
+                if (currentLexicalSym.tokenType != TokenType.OP_COMMA)
+                    Report.error(currentLexicalSym.position,
+                            "After the first expression in for loop statement a comma is required");
+                parseExpression(lexicalSymbol);
+                currentLexicalSym = lexicalSymbol.next();
+                if (currentLexicalSym.tokenType != TokenType.OP_COMMA)
+                    Report.error(currentLexicalSym.position,
+                            "After the second expression in for loop statement a comma is required");
+                parseExpression(lexicalSymbol);
+                currentLexicalSym = lexicalSymbol.next();
+                if (currentLexicalSym.tokenType != TokenType.OP_COLON)
+                    Report.error(currentLexicalSym.position,
+                            "After the third expression in for loop statement a colon is required");
+                parseExpression(lexicalSymbol);
+                currentLexicalSym = lexicalSymbol.next();
+                if (currentLexicalSym.tokenType != TokenType.OP_RBRACE)
+                    Report.error(currentLexicalSym.position,
+                            "After the for loop statement body a closing right curly brace is required");
                 break;
             default:
-            // Parse expression = expression }
+                dump("atom_expression_lbrace_1 -> expression \'=\' expression \'}\'");
+                parseExpression(lexicalSymbol);
+                currentLexicalSym = lexicalSymbol.next();
+                if (currentLexicalSym.tokenType != TokenType.OP_ASSIGN)
+                    Report.error(currentLexicalSym.position,
+                            "Following an expression an assignment operator is required in this statment");
+                parseExpression(lexicalSymbol);
+                currentLexicalSym = lexicalSymbol.next();
+                if (currentLexicalSym.tokenType != TokenType.OP_RBRACE)
+                    Report.error(currentLexicalSym.position,
+                            "After the expression assignemnt statment a closing right curly brace is required");
                 break;
         }
     }
@@ -459,7 +497,28 @@ public class Parser {
     }
 
     private void parseExpressions(ListIterator<Symbol> lexicalSymbol) {
+        dump("expressions -> expression expressions_1");
+        parseExpression(lexicalSymbol);
+        Symbol currentLexicalSym = lexicalSymbol.next();
+        if(currentLexicalSym.tokenType == TokenType.OP_COMMA) {
+            dump("expressions_1 -> \',\' expression expressions_1");
+            parseExpressions_1(lexicalSymbol);
+        } else {
+            dump("expressions_1 -> ε");
+            lexicalSymbol.previous();
+        }
+    }
 
+    private void parseExpressions_1(ListIterator<Symbol> lexicalSymbol) {
+        parseExpression(lexicalSymbol);
+        Symbol currentLexicalSym = lexicalSymbol.next();
+        if(currentLexicalSym.tokenType == TokenType.OP_COMMA) {
+            dump("expressions_1 -> \',\' expression expressions_1");
+            parseExpressions_1(lexicalSymbol);
+        } else {
+            dump("expressions_1 -> ε");
+            lexicalSymbol.previous();
+        }
     }
 
     private void parseParams(ListIterator<Symbol> lexicalSymbol) {

@@ -63,11 +63,11 @@ atom_expression -> "string_const" .
 atom_expression -> "id" atom_expression_id .
 atom_expression_id -> "(" expressions ")" | .
 
-atom_expression_lbracket -> "{" atom_expression_lbracket_1 .
-atom_expression_lbracket_1 -> expression "=" expression "}" .
-atom_expression_lbracket_1 -> "if" expression "then" expression if_else "}" .
-atom_expression_lbracket_1 -> "while" expression ":" expression "}" .
-atom_expression_lbracket_1 -> "for" "id" "=" expression "," expression "," expression ":" expression "}" .
+atom_expression -> "{" atom_expression_lbrace_1 .
+atom_expression_lbrace_1 -> expression "=" expression "}" .
+atom_expression_lbrace_1 -> "if" expression "then" expression if_else "}" .
+atom_expression_lbrace_1 -> "while" expression ":" expression "}" .
+atom_expression_lbrace_1 -> "for" "id" "=" expression "," expression "," expression ":" expression "}" .
 
 if_else -> else expression | .
 

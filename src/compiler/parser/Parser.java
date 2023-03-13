@@ -16,6 +16,9 @@ import java.util.ListIterator;
 import java.util.Optional;
 
 import javax.lang.model.util.ElementScanner14;
+import javax.sound.sampled.LineEvent;
+
+import org.xml.sax.ext.LexicalHandler;
 
 import common.Report;
 import compiler.lexer.Position;
@@ -61,8 +64,8 @@ public class Parser {
         parseDef(lexicalSymbol);
         if (lexicalSymbol.next().tokenType == TokenType.OP_SEMICOLON) {
             parseDefs_1(lexicalSymbol);
-        }
-        else lexicalSymbol.previous();
+        } else
+            lexicalSymbol.previous();
     }
 
     private void parseDefs_1(ListIterator<Symbol> lexicalSymbol) {
@@ -70,8 +73,8 @@ public class Parser {
         parseDef(lexicalSymbol);
         if (lexicalSymbol.next().tokenType == TokenType.OP_SEMICOLON) {
             parseDefs_1(lexicalSymbol);
-        }
-        else lexicalSymbol.previous();
+        } else
+            lexicalSymbol.previous();
     }
 
     private void parseDef(ListIterator<Symbol> lexicalSymbol) {
@@ -153,10 +156,294 @@ public class Parser {
     }
 
     private void parseExpression(ListIterator<Symbol> lexicalSymbol) {
+        dump("expression -> logical_ior_expression expression_1");
         parseLogicalOrExpression(lexicalSymbol);
+        Symbol currentLexicalSym = lexicalSymbol.next();
+        dump("expression_1 -> { WHERE definitions } | ε");
+        if (currentLexicalSym.tokenType == TokenType.OP_LBRACE)
+            parseExpression_1(lexicalSymbol);
+        else
+            lexicalSymbol.previous();
+    }
+
+    private void parseExpression_1(ListIterator<Symbol> lexicalSymbol) {
+        Symbol currentLexicalSym = lexicalSymbol.next();
+        if (currentLexicalSym.tokenType != TokenType.KW_WHERE)
+            Report.error(currentLexicalSym.position,
+                    "The keyword where is required after left brace in expression following a logical or expression");
+        parseDefs(lexicalSymbol);
+        currentLexicalSym = lexicalSymbol.next();
+        if (currentLexicalSym.tokenType != TokenType.OP_RBRACE)
+            Report.error(currentLexicalSym.position,
+                    "After definitions in a where definitions statemetn a right brace should close the block");
     }
 
     private void parseLogicalOrExpression(ListIterator<Symbol> lexicalSymbol) {
+        dump("logical_ior_expression -> logical_and_expression logical_ior_expression_1");
+        parseLogicalAndExpression(lexicalSymbol);
+        Symbol currentLexicalSym = lexicalSymbol.next();
+        dump("logical_ior_expression_1 -> \'|\' logical_and_expression logical_ior_expression_1 | ε");
+        if (currentLexicalSym.tokenType == TokenType.OP_OR)
+            parseLogicalOrExpression_1(lexicalSymbol);
+        else
+            lexicalSymbol.previous();
+    }
+
+    private void parseLogicalOrExpression_1(ListIterator<Symbol> lexicalSymbol) {
+        parseLogicalAndExpression(lexicalSymbol);
+        Symbol currentLexicalSym = lexicalSymbol.next();
+        dump("logical_ior_expression_1 -> \'|\' logical_and_expression logical_ior_expression_1 | ε");
+        if (currentLexicalSym.tokenType == TokenType.OP_OR)
+            parseLogicalOrExpression_1(lexicalSymbol);
+        else
+            lexicalSymbol.previous();
+    }
+
+    private void parseLogicalAndExpression(ListIterator<Symbol> lexicalSymbol) {
+        dump("logical_and_expression -> compare_expression logical_and_expression_1");
+        parseCompareExpression(lexicalSymbol);
+        Symbol currentLexicalSym = lexicalSymbol.next();
+        dump("logical_and_expression_1 -> \'&\' compare_expression logical_and_expression_1 | ε");
+        if (currentLexicalSym.tokenType == TokenType.OP_AND)
+            parseLogicalAndExpression_1(lexicalSymbol);
+        else
+            lexicalSymbol.previous();
+    }
+
+    private void parseLogicalAndExpression_1(ListIterator<Symbol> lexicalSymbol) {
+        parseCompareExpression(lexicalSymbol);
+        Symbol currentLexicalSym = lexicalSymbol.next();
+        dump("logical_and_expression_1 -> \'&\' compare_expression logical_and_expression_1 | ε");
+        if (currentLexicalSym.tokenType == TokenType.OP_AND)
+            parseLogicalAndExpression_1(lexicalSymbol);
+        else
+            lexicalSymbol.previous();
+    }
+
+    private void parseCompareExpression(ListIterator<Symbol> lexicalSymbol) {
+        dump("compare_expression -> additive_expr compare_expression_1");
+        parseAdditiveExpression(lexicalSymbol);
+        Symbol currentLexicalSym = lexicalSymbol.next();
+        switch (currentLexicalSym.tokenType) {
+            case OP_EQ:
+                dump("compare_expression_1 -> \'==\' additive_expr");
+                parseCompareExpression_1(lexicalSymbol);
+                break;
+            case OP_LEQ:
+                dump("compare_expression_1 -> \'<=\' additive_expr");
+                parseCompareExpression_1(lexicalSymbol);
+                break;
+            case OP_GEQ:
+                dump("compare_expression_1 -> \'>=\' additive_expr");
+                parseCompareExpression_1(lexicalSymbol);
+                break;
+            case OP_NEQ:
+                dump("compare_expression_1 -> \'!=\' additive_expr");
+                parseCompareExpression_1(lexicalSymbol);
+                break;
+            case OP_GT:
+                dump("compare_expression_1 -> \'>\' additive_expr");
+                parseCompareExpression_1(lexicalSymbol);
+                break;
+            case OP_LT:
+                dump("compare_expression_1 -> \'<\' additive_expr");
+                parseCompareExpression_1(lexicalSymbol);
+                break;
+            default:
+                dump("compare_expression_1 -> ε");
+                lexicalSymbol.previous();
+                break;
+        }
+    }
+
+    private void parseCompareExpression_1(ListIterator<Symbol> lexicalSymbol) {
+        parseAdditiveExpression(lexicalSymbol);
+    }
+
+    private void parseAdditiveExpression(ListIterator<Symbol> lexicalSymbol) {
+        dump("additive_expr -> multiplicative_expression additive_expression_1");
+        parseMultiplicativeExpression(lexicalSymbol);
+        Symbol currentLexicalSym = lexicalSymbol.next();
+        if (currentLexicalSym.tokenType == TokenType.OP_ADD) {
+            dump("additive_expression_1 -> \'+\' multiplicative_expression additive_expression_1");
+            parseAdditiveExpression_1(lexicalSymbol);
+        } else if (currentLexicalSym.tokenType == TokenType.OP_SUB) {
+            dump("additive_expression_1 -> \'-\' multiplicative_expression additive_expression_1");
+            parseAdditiveExpression_1(lexicalSymbol);
+        } else {
+            dump("additive_expression_1 -> ε");
+            lexicalSymbol.previous();
+        }
+    }
+
+    private void parseAdditiveExpression_1(ListIterator<Symbol> lexicalSymbol) {
+        parseMultiplicativeExpression(lexicalSymbol);
+        Symbol currentLexicalSym = lexicalSymbol.next();
+        if (currentLexicalSym.tokenType == TokenType.OP_ADD) {
+            dump("additive_expression_1 -> \'+\' multiplicative_expression additive_expression_1");
+            parseAdditiveExpression_1(lexicalSymbol);
+        } else if (currentLexicalSym.tokenType == TokenType.OP_SUB) {
+            dump("additive_expression_1 -> \'-\' multiplicative_expression additive_expression_1");
+            parseAdditiveExpression_1(lexicalSymbol);
+        } else {
+            dump("additive_expression_1 -> ε");
+            lexicalSymbol.previous();
+        }
+    }
+
+    private void parseMultiplicativeExpression(ListIterator<Symbol> lexicalSymbol) {
+        dump("multiplicative_expression -> prefix_expression multiplicative_expression_1");
+        parsePrefixExpression(lexicalSymbol);
+        Symbol currentLexicalSym = lexicalSymbol.next();
+        if (currentLexicalSym.tokenType == TokenType.OP_MUL) {
+            dump("multiplicative_expression_1 -> \'*\' prefix_expression multiplicative_expression_1");
+            parseMultiplicativeExpression_1(lexicalSymbol);
+        } else if (currentLexicalSym.tokenType == TokenType.OP_DIV) {
+            dump("multiplicative_expression_1 -> \'/\' prefix_expression multiplicative_expression_1");
+            parseMultiplicativeExpression_1(lexicalSymbol);
+        } else if (currentLexicalSym.tokenType == TokenType.OP_MOD) {
+            dump("multiplicative_expression_1 -> \'%\' prefix_expression multiplicative_expression_1");
+            parseMultiplicativeExpression_1(lexicalSymbol);
+        } else {
+            dump("multiplicative_expression_1 -> ε");
+            lexicalSymbol.previous();
+        }
+    }
+
+    private void parseMultiplicativeExpression_1(ListIterator<Symbol> lexicalSymbol) {
+        parsePrefixExpression(lexicalSymbol);
+        Symbol currentLexicalSym = lexicalSymbol.next();
+        if (currentLexicalSym.tokenType == TokenType.OP_MUL) {
+            dump("multiplicative_expression_1 -> \'*\' prefix_expression multiplicative_expression_1");
+            parseMultiplicativeExpression_1(lexicalSymbol);
+        } else if (currentLexicalSym.tokenType == TokenType.OP_DIV) {
+            dump("multiplicative_expression_1 -> \'/\' prefix_expression multiplicative_expression_1");
+            parseMultiplicativeExpression_1(lexicalSymbol);
+        } else if (currentLexicalSym.tokenType == TokenType.OP_MOD) {
+            dump("multiplicative_expression_1 -> \'%\' prefix_expression multiplicative_expression_1");
+            parseMultiplicativeExpression_1(lexicalSymbol);
+        } else {
+            dump("multiplicative_expression_1 -> ε");
+            lexicalSymbol.previous();
+        }
+    }
+
+    private void parsePrefixExpression(ListIterator<Symbol> lexicalSymbol) {
+        Symbol currentLexicalSym = lexicalSymbol.next();
+        if (currentLexicalSym.tokenType == TokenType.OP_ADD) {
+            dump("prefix_expression -> \'+\' prefix_expression");
+            parsePrefixExpression(lexicalSymbol);
+        } else if (currentLexicalSym.tokenType == TokenType.OP_SUB) {
+            dump("prefix_expression -> \'-\' prefix_expression");
+            parsePrefixExpression(lexicalSymbol);
+        } else if (currentLexicalSym.tokenType == TokenType.OP_NOT) {
+            dump("prefix_expression -> \'!\' prefix_expression");
+            parsePrefixExpression(lexicalSymbol);
+        } else {
+            dump("prefix_expression -> postfix_expression");
+            lexicalSymbol.previous();
+            parsePostfixExpression(lexicalSymbol);
+        }
+    }
+
+    private void parsePostfixExpression(ListIterator<Symbol> lexicalSymbol) {
+        dump("postfix_expression -> atom_expression postfix_expression_1");
+        parseAtomExpression(lexicalSymbol);
+        Symbol currentLexicalSym = lexicalSymbol.next();
+        if (currentLexicalSym.tokenType == TokenType.OP_LBRACKET) {
+            dump("postfix_expression_1 -> \'[\' expression \']\' postfix_expression_1");
+            lexicalSymbol.previous();
+            parsePostfixExpression_1(lexicalSymbol);
+        } else {
+            dump("postfix_expression -> ε");
+            lexicalSymbol.previous();
+        }
+    }
+
+    private void parsePostfixExpression_1(ListIterator<Symbol> lexicalSymbol) {
+        Symbol currentLexicalSym = lexicalSymbol.next();
+        if (currentLexicalSym.tokenType != TokenType.OP_LBRACKET)
+            Report.error(currentLexicalSym.position, "Before expressions a left opening square bracket is required");
+        parseExpression(lexicalSymbol);
+        currentLexicalSym = lexicalSymbol.next();
+        if (currentLexicalSym.tokenType != TokenType.OP_RBRACKET)
+            Report.error(currentLexicalSym.position,
+                    "Following expressions a right closing square bracket is required");
+        parsePostfixExpression(lexicalSymbol);
+    }
+
+    private void parseAtomExpression(ListIterator<Symbol> lexicalSymbol) {
+        Symbol currentLexicalSym = lexicalSymbol.next();
+        switch (currentLexicalSym.tokenType) {
+            case C_LOGICAL:
+                dump("atom_expression -> logical_const");
+                break;
+            case C_INTEGER:
+                dump("atom_expression -> integer_const");
+                break;
+            case C_STRING:
+                dump("atom_expression -> string_const");
+                break;
+            case IDENTIFIER:
+                dump("atom_expression -> id atom_expression_id");
+                currentLexicalSym = lexicalSymbol.next();
+                if (currentLexicalSym.tokenType == TokenType.OP_LPARENT) {
+                    dump("atom_expression_1 -> \'(\' expressions \')\'");
+                    parseExpressions(lexicalSymbol);
+                    currentLexicalSym = lexicalSymbol.next();
+                    if (currentLexicalSym.tokenType != TokenType.OP_RPARENT)
+                        Report.error(currentLexicalSym.position,
+                                "Expressions should be closed with a closing left paranthesis");
+                } else {
+                    dump("atom_expression_1 -> ε");
+                    lexicalSymbol.previous();
+                }
+                break;
+            case OP_LPARENT:
+                dump("atom_expression -> \'(\' expressions \')\'");
+                parseExpressions(lexicalSymbol);
+                currentLexicalSym = lexicalSymbol.next();
+                if (currentLexicalSym.tokenType != TokenType.OP_RPARENT)
+                    Report.error(currentLexicalSym.position,
+                            "Expressions should be closed with a closing left paranthesis");
+                break;
+            case OP_LBRACE:
+                dump("atom_expression -> \'{\' atom_expression_lbrace_1");
+                parseAtomExpressionLBrace(lexicalSymbol);
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void parseAtomExpressionLBrace(ListIterator<Symbol> lexicalSymbol) {
+        Symbol currentLexicalSym = lexicalSymbol.next();
+        switch (currentLexicalSym.tokenType) {
+            case KW_IF:
+                dump("atom_expression_lbrace_1 -> if expression then expression if_else \'}\'")
+                parseExpression(lexicalSymbol);
+                currentLexicalSym = lexicalSymbol.next();
+                if(currentLexicalSym.tokenType != TokenType.KW_THEN) 
+                    Report.error(currentLexicalSym.position, "In the if statement after condition a then keyword should follow");
+                parseExpression(lexicalSymbol);
+                currentLexicalSym = lexicalSymbol.next();
+                if(currentLexicalSym.tokenType != TokenType.OP_RBRACE) {
+                    dump("if_else -> else expression");
+                    lexicalSymbol.previous();
+                    parseIfElse(lexicalSymbol);
+                }
+                break;
+        }
+    }
+
+    private void parseIfElse(ListIterator<Symbol> lexicalSymbol) {
+        Symbol currentLexicalSym = lexicalSymbol.next();
+        if(currentLexicalSym.tokenType != TokenType.KW_ELSE)
+            Report.error(currentLexicalSym.position, "Either else statement or closing right brace expected");
+        parseExpression(lexicalSymbol);
+    }
+
+    private void parseExpressions(ListIterator<Symbol> lexicalSymbol) {
 
     }
 

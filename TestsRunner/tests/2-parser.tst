@@ -50,7 +50,7 @@ definitions_1 -> ε
 
 !name: Function Compare Statement
 !code:
-fun id ( neki : integer ) : logical = neki == integer_const
+fun id ( neki : integer ) : logical = neki == 99
 !expected: 
 source -> definitions
 definitions -> definition definitions_1
@@ -88,4 +88,5 @@ logical_ior_expression_1 -> ε
 expression_1 -> ε
 definitions_1 -> ε
 !end
+
 

@@ -120,7 +120,7 @@ public class Parser {
     }
 
     private void parseFunDef(ListIterator<Symbol> lexicalSymbol) {
-        dump("function_definition -> fun id ( parameters ) : type = expression");
+        dump("function_definition -> fun id \'(\' parameters \')\' \':\' type \'=\' expression");
         Symbol currentLexicalSym = lexicalSymbol.next();
         if (currentLexicalSym.tokenType != TokenType.IDENTIFIER)
             Report.error(currentLexicalSym.position,
@@ -150,11 +150,13 @@ public class Parser {
         dump("expression -> logical_ior_expression expression_1");
         parseLogicalOrExpression(lexicalSymbol);
         Symbol currentLexicalSym = lexicalSymbol.next();
-        dump("expression_1 -> { WHERE definitions } | ε");
-        if (currentLexicalSym.tokenType == TokenType.OP_LBRACE)
+        if (currentLexicalSym.tokenType == TokenType.OP_LBRACE) {
+            dump("expression_1 -> { WHERE definitions }");
             parseExpression_1(lexicalSymbol);
-        else
+        } else {
+            dump("expression_1 -> ε");
             lexicalSymbol.previous();
+        }
     }
 
     private void parseExpression_1(ListIterator<Symbol> lexicalSymbol) {
@@ -173,42 +175,50 @@ public class Parser {
         dump("logical_ior_expression -> logical_and_expression logical_ior_expression_1");
         parseLogicalAndExpression(lexicalSymbol);
         Symbol currentLexicalSym = lexicalSymbol.next();
-        dump("logical_ior_expression_1 -> \'|\' logical_and_expression logical_ior_expression_1 | ε");
-        if (currentLexicalSym.tokenType == TokenType.OP_OR)
+        if (currentLexicalSym.tokenType == TokenType.OP_OR) {
+            dump("logical_ior_expression_1 -> \'|\' logical_and_expression logical_ior_expression_1");
             parseLogicalOrExpression_1(lexicalSymbol);
-        else
+        } else {
+            dump("logical_ior_expression_1 -> ε");
             lexicalSymbol.previous();
+        }
     }
 
     private void parseLogicalOrExpression_1(ListIterator<Symbol> lexicalSymbol) {
         parseLogicalAndExpression(lexicalSymbol);
         Symbol currentLexicalSym = lexicalSymbol.next();
-        dump("logical_ior_expression_1 -> \'|\' logical_and_expression logical_ior_expression_1 | ε");
-        if (currentLexicalSym.tokenType == TokenType.OP_OR)
+        if (currentLexicalSym.tokenType == TokenType.OP_OR) {
+            dump("logical_ior_expression_1 -> \'|\' logical_and_expression logical_ior_expression_1");
             parseLogicalOrExpression_1(lexicalSymbol);
-        else
+        } else {
+            dump("logical_ior_expression_1 -> ε");
             lexicalSymbol.previous();
+        }
     }
 
     private void parseLogicalAndExpression(ListIterator<Symbol> lexicalSymbol) {
         dump("logical_and_expression -> compare_expression logical_and_expression_1");
         parseCompareExpression(lexicalSymbol);
         Symbol currentLexicalSym = lexicalSymbol.next();
-        dump("logical_and_expression_1 -> \'&\' compare_expression logical_and_expression_1 | ε");
-        if (currentLexicalSym.tokenType == TokenType.OP_AND)
+        if (currentLexicalSym.tokenType == TokenType.OP_AND) {
+            dump("logical_and_expression_1 -> \'&\' compare_expression logical_and_expression_1");
             parseLogicalAndExpression_1(lexicalSymbol);
-        else
+        } else {
+            dump("logical_and_expression_1 -> ε");
             lexicalSymbol.previous();
+        }
     }
 
     private void parseLogicalAndExpression_1(ListIterator<Symbol> lexicalSymbol) {
         parseCompareExpression(lexicalSymbol);
         Symbol currentLexicalSym = lexicalSymbol.next();
-        dump("logical_and_expression_1 -> \'&\' compare_expression logical_and_expression_1 | ε");
-        if (currentLexicalSym.tokenType == TokenType.OP_AND)
+        if (currentLexicalSym.tokenType == TokenType.OP_AND) {
+            dump("logical_and_expression_1 -> \'&\' compare_expression logical_and_expression_1");
             parseLogicalAndExpression_1(lexicalSymbol);
-        else
+        } else {
+            dump("logical_and_expression_1 -> ε");
             lexicalSymbol.previous();
+        }
     }
 
     private void parseCompareExpression(ListIterator<Symbol> lexicalSymbol) {
@@ -346,7 +356,7 @@ public class Parser {
             lexicalSymbol.previous();
             parsePostfixExpression_1(lexicalSymbol);
         } else {
-            dump("postfix_expression -> ε");
+            dump("postfix_expression_1 -> ε");
             lexicalSymbol.previous();
         }
     }
@@ -360,6 +370,7 @@ public class Parser {
         if (currentLexicalSym.tokenType != TokenType.OP_RBRACKET)
             Report.error(currentLexicalSym.position,
                     "Following expressions a right closing square bracket is required");
+        lexicalSymbol.previous();
         parsePostfixExpression(lexicalSymbol);
     }
 
@@ -379,14 +390,14 @@ public class Parser {
                 dump("atom_expression -> id atom_expression_id");
                 currentLexicalSym = lexicalSymbol.next();
                 if (currentLexicalSym.tokenType == TokenType.OP_LPARENT) {
-                    dump("atom_expression_1 -> \'(\' expressions \')\'");
+                    dump("atom_expression_id -> \'(\' expressions \')\'");
                     parseExpressions(lexicalSymbol);
                     currentLexicalSym = lexicalSymbol.next();
                     if (currentLexicalSym.tokenType != TokenType.OP_RPARENT)
                         Report.error(currentLexicalSym.position,
-                                "Expressions should be closed with a closing left paranthesis");
+                                "Expressions should be closed with a closing right paranthesis");
                 } else {
-                    dump("atom_expression_1 -> ε");
+                    dump("atom_expression_id -> ε");
                     lexicalSymbol.previous();
                 }
                 break;
@@ -396,7 +407,7 @@ public class Parser {
                 currentLexicalSym = lexicalSymbol.next();
                 if (currentLexicalSym.tokenType != TokenType.OP_RPARENT)
                     Report.error(currentLexicalSym.position,
-                            "Expressions should be closed with a closing left paranthesis");
+                            "Expressions should be closed with a closing right paranthesis");
                 break;
             case OP_LBRACE:
                 dump("atom_expression -> \'{\' atom_expression_lbrace_1");
@@ -498,7 +509,7 @@ public class Parser {
         dump("expressions -> expression expressions_1");
         parseExpression(lexicalSymbol);
         Symbol currentLexicalSym = lexicalSymbol.next();
-        if(currentLexicalSym.tokenType == TokenType.OP_COMMA) {
+        if (currentLexicalSym.tokenType == TokenType.OP_COMMA) {
             dump("expressions_1 -> \',\' expression expressions_1");
             parseExpressions_1(lexicalSymbol);
         } else {
@@ -510,7 +521,7 @@ public class Parser {
     private void parseExpressions_1(ListIterator<Symbol> lexicalSymbol) {
         parseExpression(lexicalSymbol);
         Symbol currentLexicalSym = lexicalSymbol.next();
-        if(currentLexicalSym.tokenType == TokenType.OP_COMMA) {
+        if (currentLexicalSym.tokenType == TokenType.OP_COMMA) {
             dump("expressions_1 -> \',\' expression expressions_1");
             parseExpressions_1(lexicalSymbol);
         } else {
@@ -522,22 +533,19 @@ public class Parser {
     private void parseParams(ListIterator<Symbol> lexicalSymbol) {
         dump("parameters -> parameter parameters_1");
         parseParam(lexicalSymbol);
-        Symbol currentLexicalSym = lexicalSymbol.next();
-        dump("parameters_1 -> , parameter parameters_1 | ε");
-        if (currentLexicalSym.tokenType == TokenType.OP_COMMA)
-            parseParams_1(lexicalSymbol);
-        else
-            lexicalSymbol.previous();
+        parseParams_1(lexicalSymbol);
     }
 
     private void parseParams_1(ListIterator<Symbol> lexicalSymbol) {
-        parseParam(lexicalSymbol);
         Symbol currentLexicalSym = lexicalSymbol.next();
-        dump("parameters_1 -> , parameter parameters_1 | ε");
-        if (currentLexicalSym.tokenType == TokenType.OP_COMMA)
+        if (currentLexicalSym.tokenType == TokenType.OP_COMMA) {
+            dump("parameters_1 -> , parameter parameters_1");
+            parseParam(lexicalSymbol);
             parseParams_1(lexicalSymbol);
-        else
+        } else {
+            dump("parameters_1 -> ε");
             lexicalSymbol.previous();
+        }
     }
 
     private void parseParam(ListIterator<Symbol> lexicalSymbol) {

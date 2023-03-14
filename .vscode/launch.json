@@ -24,7 +24,7 @@
             "request": "launch",
             "mainClass": "Main",
             "projectName": "PINS-compiler_7d951449",
-            "args": "PINS --dump SYN test3.pns"
+            "args": "PINS --exec SYN --dump SYN test3.pns"
         }
     ]
 }

@@ -6,6 +6,14 @@
     "configurations": [
         {
             "type": "java",
+            "name": "App",
+            "request": "launch",
+            "mainClass": "App",
+            "projectName": "PINS-compiler_7d951449",
+            "args": "test ./ ./TestsRunner/tests/2-parser.tst -v"
+        },
+        {
+            "type": "java",
             "name": "Launch Current File",
             "request": "launch",
             "mainClass": "${file}"
@@ -16,7 +24,7 @@
             "request": "launch",
             "mainClass": "Main",
             "projectName": "PINS-compiler_7d951449",
-            "args": "PINS --dump LEX test.pns"
+            "args": "PINS --dump SYN test3.pns"
         }
     ]
 }

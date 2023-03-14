@@ -166,7 +166,7 @@ public class Lexer {
 
             // Ujami vse znake, ki so lahko samo en char
             else if (single_char_lexems.containsKey(source.charAt(i))) {
-                symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index),
+                symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index + 1),
                         single_char_lexems.get(source.charAt(i)),
                         Character.toString(source.charAt(i))));
             }
@@ -182,13 +182,12 @@ public class Lexer {
             }
             inline_start_index = inline_stop_index;
         }
-        symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index), EOF, "$"));
+        symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index + 1), EOF, "$"));
         return symbols;
     }
 
     private static Symbol parseString(String source) {
         String tempString = "";
-        tempString += source.charAt(i);
         while ((i + 2) < source.length()
                 && (source.charAt(i + 1) != '\'' || (source.charAt(i + 1) == '\'' && source.charAt(i + 2) == '\''))) {
             if (source.charAt(i + 1) == '\'') {
@@ -196,7 +195,7 @@ public class Lexer {
                 i += 2;
                 inline_stop_index += 2;
             } else if (source.charAt(i + 1) == '\n') {
-                Report.error(new Position(line_index, inline_start_index, line_index, inline_stop_index),
+                Report.error(new Position(line_index, inline_start_index, line_index, inline_stop_index + 1),
                         "String, se ne zaključi z končnim \' znakom!");
             } else {
                 tempString += source.charAt(i + 1);
@@ -204,14 +203,12 @@ public class Lexer {
                 inline_stop_index++;
             }
         }
-        if ((i + 1) < source.length() && source.charAt(i + 1) == '\'')
-            tempString += "\'";
-        else
-            Report.error(new Position(line_index, inline_start_index, line_index, inline_stop_index),
+        if (!((i + 1) < source.length() && source.charAt(i + 1) == '\''))
+            Report.error(new Position(line_index, inline_start_index, line_index, inline_stop_index + 1),
                     "String, se ne zaključi z končnim \' znakom!");
         i++;
         inline_stop_index++;
-        return (new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index),
+        return (new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index + 1),
                 C_STRING, tempString));
     }
 
@@ -220,10 +217,10 @@ public class Lexer {
             StringBuffer token_key = new StringBuffer().append(source.charAt(i)).append(source.charAt(i + 1));
             i++;
             inline_stop_index++;
-            return (new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index),
+            return (new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index + 1),
                     multi_char_op.get(token_key.toString()), token_key.toString()));
         } else {
-            return (new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index),
+            return (new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index + 1),
                     multi_char_op.get(Character.toString(source.charAt(i))),
                     Character.toString(source.charAt(i))));
         }
@@ -241,7 +238,7 @@ public class Lexer {
             Report.error(new Position(line_index, inline_start_index, line_index, inline_stop_index),
                     "Ime se ne sme začeti z številom, ali pa število ne sme vsebovati črke");
         }
-        return (new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index),
+        return (new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index + 1),
                 C_INTEGER, tempString));
     }
 
@@ -255,7 +252,7 @@ public class Lexer {
             inline_stop_index++;
         }
         TokenType tkn_Type = assignTokenType(tempString);
-        return (new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index),
+        return (new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index + 1),
                 tkn_Type,
                 tempString));
     }

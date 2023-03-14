@@ -14,7 +14,6 @@ import java.util.ListIterator;
 import java.util.Optional;
 
 import common.Report;
-import compiler.lexer.Position;
 import compiler.lexer.Symbol;
 import compiler.lexer.TokenType;
 

@@ -29,7 +29,7 @@ typ neki : string
 source -> definitions
 definitions -> definition definitions_1
 definition -> type_definition
-type_definition -> "typ" "id" ":" type
-type -> "string"
+type_definition -> typ id : type
+type -> string
 definitions_1 -> ε
 !end

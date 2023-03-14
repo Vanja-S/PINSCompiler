@@ -54,19 +54,18 @@ public class Parser {
     private void parseDefs(ListIterator<Symbol> lexicalSymbol) {
         dump("definitions -> definition definitions_1");
         parseDef(lexicalSymbol);
-        if (lexicalSymbol.next().tokenType == TokenType.OP_SEMICOLON) {
-            parseDefs_1(lexicalSymbol);
-        } else
-            lexicalSymbol.previous();
+        parseDefs_1(lexicalSymbol);
     }
 
     private void parseDefs_1(ListIterator<Symbol> lexicalSymbol) {
-        dump("definitions_1 -> ; definition definitions_1 | ε");
-        parseDef(lexicalSymbol);
         if (lexicalSymbol.next().tokenType == TokenType.OP_SEMICOLON) {
+            dump("definitions_1 -> ; definition definitions_1");
+            parseDef(lexicalSymbol);
             parseDefs_1(lexicalSymbol);
-        } else
+        } else {
+            dump("definitions_1 -> ε");
             lexicalSymbol.previous();
+        }
     }
 
     private void parseDef(ListIterator<Symbol> lexicalSymbol) {

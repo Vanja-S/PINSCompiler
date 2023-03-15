@@ -370,7 +370,6 @@ public class Parser {
         if (currentLexicalSym.tokenType != TokenType.OP_RBRACKET)
             Report.error(currentLexicalSym.position,
                     "Following expressions a right closing square bracket is required");
-        lexicalSymbol.previous();
         parsePostfixExpression(lexicalSymbol);
     }
 

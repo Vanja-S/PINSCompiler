@@ -89,4 +89,17 @@ expression_1 -> ε
 definitions_1 -> ε
 !end
 
-
+!name: Function with while, for and if statement
+!code:
+fun prestejCrke (i:integer): integer = {
+    while (i < j[2]):
+        {
+            for i = 10, i < 100, i + 1:
+                {
+                    if i == 69 then print(i)
+                }
+        }
+}
+!expected:
+source -> definitions
+definitions -> definition definitions_1

@@ -413,6 +413,7 @@ public class Parser {
                 parseAtomExpressionLBrace(lexicalSymbol);
                 break;
             default:
+                lexicalSymbol.previous();
                 break;
         }
     }
@@ -433,9 +434,9 @@ public class Parser {
                     dump("if_else -> else expression");
                     lexicalSymbol.previous();
                     parseIfElse(lexicalSymbol);
-                } else
+                    currentLexicalSym = lexicalSymbol.next();
+                } else 
                     dump("if_else -> ε");
-                currentLexicalSym = lexicalSymbol.next();
                 if (currentLexicalSym.tokenType != TokenType.OP_RBRACE)
                     Report.error(currentLexicalSym.position, "The if statment should be closed with a right brace");
                 break;
@@ -447,7 +448,7 @@ public class Parser {
                     Report.error(currentLexicalSym.position, "After while condition a colon should follow");
                 parseExpression(lexicalSymbol);
                 currentLexicalSym = lexicalSymbol.next();
-                if (currentLexicalSym.tokenType != TokenType.OP_LBRACE)
+                if (currentLexicalSym.tokenType != TokenType.OP_RBRACE)
                     Report.error(currentLexicalSym.position,
                             "After while body expression a right brace should close it");
                 break;
@@ -483,6 +484,7 @@ public class Parser {
                 break;
             default:
                 dump("atom_expression_lbrace_1 -> expression \'=\' expression \'}\'");
+                lexicalSymbol.previous();
                 parseExpression(lexicalSymbol);
                 currentLexicalSym = lexicalSymbol.next();
                 if (currentLexicalSym.tokenType != TokenType.OP_ASSIGN)

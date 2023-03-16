@@ -5,7 +5,6 @@
 
 package compiler.parser;
 
-import static compiler.lexer.TokenType.*;
 import static common.RequireNonNull.requireNonNull;
 
 import java.io.PrintStream;

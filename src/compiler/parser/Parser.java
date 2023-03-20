@@ -13,8 +13,10 @@ import java.util.ListIterator;
 import java.util.Optional;
 
 import common.Report;
+import compiler.lexer.Position;
 import compiler.lexer.Symbol;
 import compiler.lexer.TokenType;
+import compiler.lexer.Position.Location;
 import compiler.parser.ast.Ast;
 import compiler.parser.ast.def.Defs;
 import compiler.parser.ast.def.FunDef;
@@ -72,11 +74,11 @@ public class Parser {
         }
     }
 
-    private Def parseDef(ListIterator<Symbol> lexicalSymbol) {
+    private Def parseDef(ListIterator<Symbol> lexicalSymbol, String string) {
         Symbol currentLexicalSym = lexicalSymbol.next();
         if (currentLexicalSym.tokenType == TokenType.KW_TYP) {
             dump("definition -> type_definition");
-            parseTypeDef(lexicalSymbol);
+            parseTypeDef(lexicalSymbol, currentLexicalSym.position.start, string);
         } else if (currentLexicalSym.tokenType == TokenType.KW_FUN) {
             dump("definition -> function_definition");
             parseFunDef(lexicalSymbol);
@@ -87,19 +89,26 @@ public class Parser {
             Report.error(currentLexicalSym.position, "Wrong definition statment");
     }
 
-    private TypeDef parseTypeDef(ListIterator<Symbol> lexicalSymbol) {
+    private TypeDef parseTypeDef(ListIterator<Symbol> lexicalSymbol, Location start, String string) {
+        String tmp = "typ ";
         dump("type_definition -> typ id : type");
         Symbol currentLexicalSym = lexicalSymbol.next();
+        tmp += currentLexicalSym.lexeme + " ";
         if (currentLexicalSym.tokenType != TokenType.IDENTIFIER)
             Report.error(currentLexicalSym.position, "Type definition identifier is wrong");
         currentLexicalSym = lexicalSymbol.next();
+        tmp += currentLexicalSym.lexeme + " ";
         if (currentLexicalSym.tokenType != TokenType.OP_COLON)
             Report.error(currentLexicalSym.position, "After type definition identifier a colon \':\' must follow");
-        return new TypeDef( , ,parseType(lexicalSymbol));
+        string += tmp + " ";
+        Type tempType = parseType(lexicalSymbol, string);
+        return new TypeDef(new Position(start, tempType.position.end), tmp, tempType);
     }
 
-    private Type parseType(ListIterator<Symbol> lexicalSymbol) {
+    private Type parseType(ListIterator<Symbol> lexicalSymbol, String string) {
         Symbol currentLexicalSym = lexicalSymbol.next();
+        Location start = currentLexicalSym.position.start;
+        String tmp = currentLexicalSym.lexeme + " ";
         if (currentLexicalSym.tokenType == TokenType.AT_LOGICAL) {
             dump("type -> logical");
             return Atom.LOG(currentLexicalSym.position);
@@ -114,16 +123,22 @@ public class Parser {
             currentLexicalSym = lexicalSymbol.next();
             if (currentLexicalSym.tokenType != TokenType.OP_LBRACKET)
                 Report.error(currentLexicalSym.position, "Specifying arr lenght must be enclosed in square brackets");
+            tmp = currentLexicalSym.lexeme + " ";
             currentLexicalSym = lexicalSymbol.next();
             if (currentLexicalSym.tokenType != TokenType.C_INTEGER)
                 Report.error(currentLexicalSym.position, "Array arr lenght must be an integer");
             int size = Integer.parseInt(currentLexicalSym.lexeme);
+            tmp = currentLexicalSym.lexeme + " ";
             currentLexicalSym = lexicalSymbol.next();
             if (currentLexicalSym.tokenType != TokenType.OP_RBRACKET)
                 Report.error(currentLexicalSym.position, "Specifying arr lenght must be enclosed in square brackets");
-            return new Array(currentLexicalSym.position, size, parseType(lexicalSymbol));
+            tmp = currentLexicalSym.lexeme + " ";
+            string += tmp + " ";
+            return new Array(new Position(start, currentLexicalSym.position.end), size,
+                    parseType(lexicalSymbol, tmp));
         } else {
             dump("type -> id");
+            string += currentLexicalSym.lexeme + " ";
             return new TypeName(currentLexicalSym.position, currentLexicalSym.lexeme);
         }
     }

@@ -24,7 +24,10 @@ import compiler.parser.ast.def.Def;
 import compiler.parser.ast.def.FunDef;
 import compiler.parser.ast.def.TypeDef;
 import compiler.parser.ast.def.VarDef;
+import compiler.parser.ast.expr.Binary;
+import compiler.parser.ast.expr.Block;
 import compiler.parser.ast.expr.Expr;
+import compiler.parser.ast.expr.Where;
 import compiler.parser.ast.type.*;
 
 public class Parser {
@@ -191,63 +194,69 @@ public class Parser {
         if (currentLexicalSym.tokenType != TokenType.OP_ASSIGN)
             Report.error(currentLexicalSym.position,
                     "Following the type in a function declaration an assignment operator is required");
-        var tempExpr = parseExpression(lexicalSymbol);
+        var tempExpr = parseExpression(lexicalSymbol, string);
         return new FunDef(new Position(start, tempExpr.position.end), tmp, tempParams, tempType, tempExpr);
     }
 
-    private Expr parseExpression(ListIterator<Symbol> lexicalSymbol) {
+    private Expr parseExpression(ListIterator<Symbol> lexicalSymbol, String string) {
         dump("expression -> logical_ior_expression expression_1");
-        Location start = lexicalSymbol.next().position.start;
-        lexicalSymbol.previous();
-        parseLogicalOrExpression(lexicalSymbol);
+        var logicalExpr = parseLogicalOrExpression(lexicalSymbol);
         Symbol currentLexicalSym = lexicalSymbol.next();
         if (currentLexicalSym.tokenType == TokenType.OP_LBRACE) {
             dump("expression_1 -> { WHERE definitions }");
-            parseExpression_1(lexicalSymbol);
+            Location start = currentLexicalSym.position.start;
+            return parseExpression_1(lexicalSymbol, start, logicalExpr, string);
         } else {
             dump("expression_1 -> ε");
             lexicalSymbol.previous();
+            return logicalExpr;
         }
     }
 
-    private void parseExpression_1(ListIterator<Symbol> lexicalSymbol) {
+    private Expr parseExpression_1(ListIterator<Symbol> lexicalSymbol, Location start, Expr logicalExpr,
+            String string) {
         Symbol currentLexicalSym = lexicalSymbol.next();
         if (currentLexicalSym.tokenType != TokenType.KW_WHERE)
             Report.error(currentLexicalSym.position,
                     "The keyword where is required after left brace in expression following a logical or expression");
-        parseDefs(lexicalSymbol);
+        var tempDefs = parseDefs(lexicalSymbol, string);
         currentLexicalSym = lexicalSymbol.next();
+        Location end = currentLexicalSym.position.end;
         if (currentLexicalSym.tokenType != TokenType.OP_RBRACE)
             Report.error(currentLexicalSym.position,
                     "After definitions in a where definitions statemetn a right brace should close the block");
+        return new Where(new Position(start, end), logicalExpr, tempDefs);
     }
 
-    private void parseLogicalOrExpression(ListIterator<Symbol> lexicalSymbol) {
+    private Binary parseLogicalOrExpression(ListIterator<Symbol> lexicalSymbol) {
         dump("logical_ior_expression -> logical_and_expression logical_ior_expression_1");
-        parseLogicalAndExpression(lexicalSymbol);
+        var tempLogical = parseLogicalAndExpression(lexicalSymbol);
         Symbol currentLexicalSym = lexicalSymbol.next();
+        Location start = currentLexicalSym.position.start;
         if (currentLexicalSym.tokenType == TokenType.OP_OR) {
             dump("logical_ior_expression_1 -> \'|\' logical_and_expression logical_ior_expression_1");
-            parseLogicalOrExpression_1(lexicalSymbol);
+            return parseLogicalOrExpression_1(lexicalSymbol, start, tempLogical);
         } else {
             dump("logical_ior_expression_1 -> ε");
             lexicalSymbol.previous();
+            return null;
         }
     }
 
-    private void parseLogicalOrExpression_1(ListIterator<Symbol> lexicalSymbol) {
-        parseLogicalAndExpression(lexicalSymbol);
+    private Binary parseLogicalOrExpression_1(ListIterator<Symbol> lexicalSymbol, Location start, Binary left) {
+        var right = parseLogicalAndExpression(lexicalSymbol);
         Symbol currentLexicalSym = lexicalSymbol.next();
         if (currentLexicalSym.tokenType == TokenType.OP_OR) {
             dump("logical_ior_expression_1 -> \'|\' logical_and_expression logical_ior_expression_1");
-            parseLogicalOrExpression_1(lexicalSymbol);
+            return parseLogicalOrExpression_1(lexicalSymbol, start, right);
         } else {
             dump("logical_ior_expression_1 -> ε");
             lexicalSymbol.previous();
+            return new Binary(new Position(null, null), left, Binary.Operator.OR, right);
         }
     }
 
-    private void parseLogicalAndExpression(ListIterator<Symbol> lexicalSymbol) {
+    private Binary parseLogicalAndExpression(ListIterator<Symbol> lexicalSymbol) {
         dump("logical_and_expression -> compare_expression logical_and_expression_1");
         parseCompareExpression(lexicalSymbol);
         Symbol currentLexicalSym = lexicalSymbol.next();
@@ -589,7 +598,8 @@ public class Parser {
         return parseParams_1(lexicalSymbol, paramsList, string);
     }
 
-    private List<FunDef.Parameter> parseParams_1(ListIterator<Symbol> lexicalSymbol, List<FunDef.Parameter> paramsList, String string) {
+    private List<FunDef.Parameter> parseParams_1(ListIterator<Symbol> lexicalSymbol, List<FunDef.Parameter> paramsList,
+            String string) {
         Symbol currentLexicalSym = lexicalSymbol.next();
         if (currentLexicalSym.tokenType == TokenType.OP_COMMA) {
             dump("parameters_1 -> , parameter parameters_1");

@@ -19,8 +19,11 @@ import compiler.lexer.TokenType;
 import compiler.lexer.Position.Location;
 import compiler.parser.ast.Ast;
 import compiler.parser.ast.def.Defs;
+import compiler.parser.ast.def.Def;
 import compiler.parser.ast.def.FunDef;
 import compiler.parser.ast.def.TypeDef;
+import compiler.parser.ast.def.VarDef;
+import compiler.parser.ast.expr.Expr;
 import compiler.parser.ast.type.*;
 
 public class Parser {
@@ -59,7 +62,7 @@ public class Parser {
 
     private Defs parseDefs(ListIterator<Symbol> lexicalSymbol) {
         dump("definitions -> definition definitions_1");
-        parseDef(lexicalSymbol);
+        var def = parseDef(lexicalSymbol);
         parseDefs_1(lexicalSymbol);
     }
 
@@ -78,15 +81,17 @@ public class Parser {
         Symbol currentLexicalSym = lexicalSymbol.next();
         if (currentLexicalSym.tokenType == TokenType.KW_TYP) {
             dump("definition -> type_definition");
-            parseTypeDef(lexicalSymbol, currentLexicalSym.position.start, string);
+            return parseTypeDef(lexicalSymbol, currentLexicalSym.position.start, string);
         } else if (currentLexicalSym.tokenType == TokenType.KW_FUN) {
             dump("definition -> function_definition");
-            parseFunDef(lexicalSymbol);
+            return parseFunDef(lexicalSymbol, currentLexicalSym.position.start, string);
         } else if (currentLexicalSym.tokenType == TokenType.KW_VAR) {
             dump("definition -> variable_definition");
-            parseVarDef(lexicalSymbol);
-        } else
+            return parseVarDef(lexicalSymbol, currentLexicalSym.position.start, string);
+        } else {
             Report.error(currentLexicalSym.position, "Wrong definition statment");
+            return null;
+        }
     }
 
     private TypeDef parseTypeDef(ListIterator<Symbol> lexicalSymbol, Location start, String string) {
@@ -143,34 +148,44 @@ public class Parser {
         }
     }
 
-    private FunDef parseFunDef(ListIterator<Symbol> lexicalSymbol) {
+    private FunDef parseFunDef(ListIterator<Symbol> lexicalSymbol, Location start, String string) {
         dump("function_definition -> fun id \'(\' parameters \')\' \':\' type \'=\' expression");
+        String tmp = "fun ";
         Symbol currentLexicalSym = lexicalSymbol.next();
+        tmp += currentLexicalSym.lexeme + " ";
         if (currentLexicalSym.tokenType != TokenType.IDENTIFIER)
             Report.error(currentLexicalSym.position,
                     "After the keyword fun, an identifier is required to name the function");
         currentLexicalSym = lexicalSymbol.next();
+        tmp += currentLexicalSym.lexeme + " ";
         if (currentLexicalSym.tokenType != TokenType.OP_LPARENT)
             Report.error(currentLexicalSym.position,
                     "Function parameters should be enclosed in paranthesis, the left one is missing or misplaced");
-        parseParams(lexicalSymbol);
+        string += tmp + " ";
+        // TODO: Uredi params
+        var tempParams = parseParams(lexicalSymbol);
         currentLexicalSym = lexicalSymbol.next();
+        tmp += currentLexicalSym.lexeme + " ";
         if (currentLexicalSym.tokenType != TokenType.OP_RPARENT)
             Report.error(currentLexicalSym.position,
                     "Function parameters should be enclosed in paranthesis, the right one is missing or misplaced");
         currentLexicalSym = lexicalSymbol.next();
+        tmp += currentLexicalSym.lexeme + " ";
         if (currentLexicalSym.tokenType != TokenType.OP_COLON)
             Report.error(currentLexicalSym.position,
                     "Following function declaration a colon is required to denote the body");
-        parseType(lexicalSymbol);
+        string += tmp + " ";
+        var tempType = parseType(lexicalSymbol, string);
         currentLexicalSym = lexicalSymbol.next();
+        tmp += currentLexicalSym.lexeme + " ";
         if (currentLexicalSym.tokenType != TokenType.OP_ASSIGN)
             Report.error(currentLexicalSym.position,
                     "Following the type in a function declaration an assignment operator is required");
-        parseExpression(lexicalSymbol);
+        var tempExpr = parseExpression(lexicalSymbol);
+        return new FunDef(new Position(start, tempExpr.position.end), tmp, tempParams, tempType, tempExpr);
     }
 
-    private void parseExpression(ListIterator<Symbol> lexicalSymbol) {
+    private Expr parseExpression(ListIterator<Symbol> lexicalSymbol) {
         dump("expression -> logical_ior_expression expression_1");
         parseLogicalOrExpression(lexicalSymbol);
         Symbol currentLexicalSym = lexicalSymbol.next();
@@ -555,7 +570,7 @@ public class Parser {
         }
     }
 
-    private void parseParams(ListIterator<Symbol> lexicalSymbol) {
+    private List<Parameter> parseParams(ListIterator<Symbol> lexicalSymbol) {
         dump("parameters -> parameter parameters_1");
         parseParam(lexicalSymbol);
         parseParams_1(lexicalSymbol);
@@ -584,15 +599,20 @@ public class Parser {
         parseType(lexicalSymbol);
     }
 
-    private void parseVarDef(ListIterator<Symbol> lexicalSymbol) {
+    private VarDef parseVarDef(ListIterator<Symbol> lexicalSymbol, Location start, String string) {
+        String tmp = "var ";
         Symbol currentLexicalSym = lexicalSymbol.next();
+        tmp += currentLexicalSym.lexeme;
         dump("variable_definition -> var id : type");
         if (currentLexicalSym.tokenType != TokenType.IDENTIFIER)
             Report.error(currentLexicalSym.position, "Variable definition identifier is wrong");
         currentLexicalSym = lexicalSymbol.next();
+        tmp += currentLexicalSym.lexeme;
         if (currentLexicalSym.tokenType != TokenType.OP_COLON)
             Report.error(currentLexicalSym.position, "After variable definition identifier a colon \':\' must follow");
-        parseType(lexicalSymbol);
+        string += tmp + " ";
+        var tempType = parseType(lexicalSymbol, string);
+        return new VarDef(new Position(start, tempType.position.end), tmp, tempType);
     }
 
     /**

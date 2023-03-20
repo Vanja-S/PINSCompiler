@@ -182,7 +182,8 @@ public class Lexer {
             }
             inline_start_index = inline_stop_index;
         }
-        symbols.add(new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index + 1), EOF, "$"));
+        symbols.add(
+                new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index + 1), EOF, "$"));
         return symbols;
     }
 
@@ -190,6 +191,8 @@ public class Lexer {
         String tempString = "";
         while ((i + 2) < source.length()
                 && (source.charAt(i + 1) != '\'' || (source.charAt(i + 1) == '\'' && source.charAt(i + 2) == '\''))) {
+            if(!((int) source.charAt(i + 1) >= 32 && (int) source.charAt(i + 1) <= 126))
+                    Report.error(new Position(line_index,inline_start_index, line_index, inline_stop_index), "Strings should only contain ASCII characters between the values of 32 and 126 inclusive!");
             if (source.charAt(i + 1) == '\'') {
                 tempString += source.charAt(i + 1);
                 i += 2;

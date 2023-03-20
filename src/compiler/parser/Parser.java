@@ -15,7 +15,10 @@ import java.util.Optional;
 import common.Report;
 import compiler.lexer.Symbol;
 import compiler.lexer.TokenType;
-
+import compiler.parser.ast.Ast;
+import compiler.parser.ast.def.Defs;
+import compiler.parser.ast.def.FunDef;
+import compiler.parser.ast.def.TypeDef;
 import compiler.parser.ast.type.*;
 
 public class Parser {
@@ -39,11 +42,11 @@ public class Parser {
     /**
      * Izvedi sintaksno analizo.
      */
-    public void parse() {
-        parseSource();
+    public Ast parse() {
+        return parseSource();
     }
 
-    private void parseSource() {
+    private Ast parseSource() {
         dump("source -> definitions");
         ListIterator<Symbol> symbol_iterator = symbols.listIterator();
         parseDefs(symbol_iterator);
@@ -52,13 +55,13 @@ public class Parser {
             Report.error(curr_sym.position, "There is no EOF at the end of file");
     }
 
-    private void parseDefs(ListIterator<Symbol> lexicalSymbol) {
+    private Defs parseDefs(ListIterator<Symbol> lexicalSymbol) {
         dump("definitions -> definition definitions_1");
         parseDef(lexicalSymbol);
         parseDefs_1(lexicalSymbol);
     }
 
-    private void parseDefs_1(ListIterator<Symbol> lexicalSymbol) {
+    private Defs parseDefs_1(ListIterator<Symbol> lexicalSymbol) {
         if (lexicalSymbol.next().tokenType == TokenType.OP_SEMICOLON) {
             dump("definitions_1 -> ; definition definitions_1");
             parseDef(lexicalSymbol);
@@ -69,7 +72,7 @@ public class Parser {
         }
     }
 
-    private void parseDef(ListIterator<Symbol> lexicalSymbol) {
+    private Def parseDef(ListIterator<Symbol> lexicalSymbol) {
         Symbol currentLexicalSym = lexicalSymbol.next();
         if (currentLexicalSym.tokenType == TokenType.KW_TYP) {
             dump("definition -> type_definition");
@@ -84,7 +87,7 @@ public class Parser {
             Report.error(currentLexicalSym.position, "Wrong definition statment");
     }
 
-    private void parseTypeDef(ListIterator<Symbol> lexicalSymbol) {
+    private TypeDef parseTypeDef(ListIterator<Symbol> lexicalSymbol) {
         dump("type_definition -> typ id : type");
         Symbol currentLexicalSym = lexicalSymbol.next();
         if (currentLexicalSym.tokenType != TokenType.IDENTIFIER)
@@ -92,7 +95,7 @@ public class Parser {
         currentLexicalSym = lexicalSymbol.next();
         if (currentLexicalSym.tokenType != TokenType.OP_COLON)
             Report.error(currentLexicalSym.position, "After type definition identifier a colon \':\' must follow");
-        parseType(lexicalSymbol);
+        return new TypeDef( , ,parseType(lexicalSymbol));
     }
 
     private Type parseType(ListIterator<Symbol> lexicalSymbol) {
@@ -125,7 +128,7 @@ public class Parser {
         }
     }
 
-    private void parseFunDef(ListIterator<Symbol> lexicalSymbol) {
+    private FunDef parseFunDef(ListIterator<Symbol> lexicalSymbol) {
         dump("function_definition -> fun id \'(\' parameters \')\' \':\' type \'=\' expression");
         Symbol currentLexicalSym = lexicalSymbol.next();
         if (currentLexicalSym.tokenType != TokenType.IDENTIFIER)

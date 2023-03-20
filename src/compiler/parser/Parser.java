@@ -8,6 +8,7 @@ package compiler.parser;
 import static common.RequireNonNull.requireNonNull;
 
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Optional;
@@ -54,26 +55,36 @@ public class Parser {
     private Ast parseSource() {
         dump("source -> definitions");
         ListIterator<Symbol> symbol_iterator = symbols.listIterator();
-        parseDefs(symbol_iterator);
+        String string = "";
+        var tempDefs = parseDefs(symbol_iterator, string);
         Symbol curr_sym = symbol_iterator.next();
-        if (symbol_iterator.hasNext() && curr_sym.tokenType != TokenType.EOF)
+        if (symbol_iterator.hasNext() && curr_sym.tokenType != TokenType.EOF) {
             Report.error(curr_sym.position, "There is no EOF at the end of file");
+            return null;
+        } else
+            return tempDefs;
     }
 
-    private Defs parseDefs(ListIterator<Symbol> lexicalSymbol) {
+    private Defs parseDefs(ListIterator<Symbol> lexicalSymbol, String string) {
+        Location start = lexicalSymbol.next().position.start;
+        lexicalSymbol.previous();
+        List<Def> defsList = new ArrayList<Def>();
         dump("definitions -> definition definitions_1");
-        var def = parseDef(lexicalSymbol);
-        parseDefs_1(lexicalSymbol);
+        defsList.add(parseDef(lexicalSymbol, string));
+        return parseDefs_1(lexicalSymbol, start, defsList, string);
     }
 
-    private Defs parseDefs_1(ListIterator<Symbol> lexicalSymbol) {
-        if (lexicalSymbol.next().tokenType == TokenType.OP_SEMICOLON) {
+    private Defs parseDefs_1(ListIterator<Symbol> lexicalSymbol, Location start, List<Def> defsList, String string) {
+        Symbol currentLexicalSym = lexicalSymbol.next();
+        if (currentLexicalSym.tokenType == TokenType.OP_SEMICOLON) {
             dump("definitions_1 -> ; definition definitions_1");
-            parseDef(lexicalSymbol);
-            parseDefs_1(lexicalSymbol);
+            defsList.add(parseDef(lexicalSymbol, string));
+            return parseDefs_1(lexicalSymbol, start, defsList, string);
         } else {
             dump("definitions_1 -> ε");
+            var tempDefs = new Defs(new Position(start, currentLexicalSym.position.end), defsList);
             lexicalSymbol.previous();
+            return tempDefs;
         }
     }
 
@@ -161,11 +172,10 @@ public class Parser {
         if (currentLexicalSym.tokenType != TokenType.OP_LPARENT)
             Report.error(currentLexicalSym.position,
                     "Function parameters should be enclosed in paranthesis, the left one is missing or misplaced");
-        string += tmp + " ";
-        // TODO: Uredi params
-        var tempParams = parseParams(lexicalSymbol);
         currentLexicalSym = lexicalSymbol.next();
         tmp += currentLexicalSym.lexeme + " ";
+        string += tmp + " ";
+        var tempParams = parseParams(lexicalSymbol, tmp);
         if (currentLexicalSym.tokenType != TokenType.OP_RPARENT)
             Report.error(currentLexicalSym.position,
                     "Function parameters should be enclosed in paranthesis, the right one is missing or misplaced");
@@ -187,6 +197,8 @@ public class Parser {
 
     private Expr parseExpression(ListIterator<Symbol> lexicalSymbol) {
         dump("expression -> logical_ior_expression expression_1");
+        Location start = lexicalSymbol.next().position.start;
+        lexicalSymbol.previous();
         parseLogicalOrExpression(lexicalSymbol);
         Symbol currentLexicalSym = lexicalSymbol.next();
         if (currentLexicalSym.tokenType == TokenType.OP_LBRACE) {
@@ -570,33 +582,40 @@ public class Parser {
         }
     }
 
-    private List<Parameter> parseParams(ListIterator<Symbol> lexicalSymbol) {
+    private List<FunDef.Parameter> parseParams(ListIterator<Symbol> lexicalSymbol, String string) {
+        List<FunDef.Parameter> paramsList = new ArrayList<FunDef.Parameter>();
         dump("parameters -> parameter parameters_1");
-        parseParam(lexicalSymbol);
-        parseParams_1(lexicalSymbol);
+        paramsList.add(parseParam(lexicalSymbol, string));
+        return parseParams_1(lexicalSymbol, paramsList, string);
     }
 
-    private void parseParams_1(ListIterator<Symbol> lexicalSymbol) {
+    private List<FunDef.Parameter> parseParams_1(ListIterator<Symbol> lexicalSymbol, List<FunDef.Parameter> paramsList, String string) {
         Symbol currentLexicalSym = lexicalSymbol.next();
         if (currentLexicalSym.tokenType == TokenType.OP_COMMA) {
             dump("parameters_1 -> , parameter parameters_1");
-            parseParam(lexicalSymbol);
-            parseParams_1(lexicalSymbol);
+            paramsList.add(parseParam(lexicalSymbol, string));
+            return parseParams_1(lexicalSymbol, paramsList, string);
         } else {
             dump("parameters_1 -> ε");
             lexicalSymbol.previous();
+            return paramsList;
         }
     }
 
-    private void parseParam(ListIterator<Symbol> lexicalSymbol) {
+    private FunDef.Parameter parseParam(ListIterator<Symbol> lexicalSymbol, String string) {
         dump("parameter -> id : type");
         Symbol currentLexicalSym = lexicalSymbol.next();
+        Location start = currentLexicalSym.position.start;
+        String tmp = currentLexicalSym.lexeme + " ";
         if (currentLexicalSym.tokenType != TokenType.IDENTIFIER)
-            Report.error(currentLexicalSym.position, "Parameter declaration must begin with its identifier");
+        Report.error(currentLexicalSym.position, "Parameter declaration must begin with its identifier");
         currentLexicalSym = lexicalSymbol.next();
+        tmp = currentLexicalSym.lexeme + " ";
         if (currentLexicalSym.tokenType != TokenType.OP_COLON)
             Report.error(currentLexicalSym.position, "After parameter identificator a colon is required");
-        parseType(lexicalSymbol);
+        var tempType = parseType(lexicalSymbol, string);
+        string += tmp + " ";
+        return new FunDef.Parameter(new Position(start, tempType.position.end), tmp, tempType)
     }
 
     private VarDef parseVarDef(ListIterator<Symbol> lexicalSymbol, Location start, String string) {

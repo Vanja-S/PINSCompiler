@@ -30,6 +30,7 @@ import compiler.parser.ast.expr.Expr;
 import compiler.parser.ast.expr.IfThenElse;
 import compiler.parser.ast.expr.Unary;
 import compiler.parser.ast.expr.Where;
+import compiler.parser.ast.expr.Unary.Operator;
 import compiler.parser.ast.type.*;
 
 public class Parser {
@@ -366,53 +367,62 @@ public class Parser {
         Location start = currentLexicalSym.position.start;
         if (currentLexicalSym.tokenType == TokenType.OP_MUL) {
             dump("multiplicative_expression_1 -> \'*\' prefix_expression multiplicative_expression_1");
-            parseMultiplicativeExpression_1(lexicalSymbol);
+            return parseMultiplicativeExpression_1(lexicalSymbol, start, tempPrefix, Binary.Operator.MUL);
         } else if (currentLexicalSym.tokenType == TokenType.OP_DIV) {
             dump("multiplicative_expression_1 -> \'/\' prefix_expression multiplicative_expression_1");
-            parseMultiplicativeExpression_1(lexicalSymbol);
+            return parseMultiplicativeExpression_1(lexicalSymbol, start, tempPrefix, Binary.Operator.DIV);
         } else if (currentLexicalSym.tokenType == TokenType.OP_MOD) {
             dump("multiplicative_expression_1 -> \'%\' prefix_expression multiplicative_expression_1");
-            parseMultiplicativeExpression_1(lexicalSymbol);
+            return parseMultiplicativeExpression_1(lexicalSymbol, start, tempPrefix, Binary.Operator.MOD);
         } else {
             dump("multiplicative_expression_1 -> ε");
-            lexicalSymbol.previous();
+            currentLexicalSym = lexicalSymbol.previous();
+            return new Binary(new Position(start, currentLexicalSym.position.end), tempPrefix, null, null);
         }
     }
 
-    private Binary parseMultiplicativeExpression_1(ListIterator<Symbol> lexicalSymbol) {
-        parsePrefixExpression(lexicalSymbol);
+    private Binary parseMultiplicativeExpression_1(ListIterator<Symbol> lexicalSymbol, Location start, Expr left, Binary.Operator op) {
+        var right = parsePrefixExpression(lexicalSymbol);
         Symbol currentLexicalSym = lexicalSymbol.next();
         if (currentLexicalSym.tokenType == TokenType.OP_MUL) {
             dump("multiplicative_expression_1 -> \'*\' prefix_expression multiplicative_expression_1");
-            parseMultiplicativeExpression_1(lexicalSymbol);
+            return parseMultiplicativeExpression_1(lexicalSymbol, start, right, Binary.Operator.MUL);
         } else if (currentLexicalSym.tokenType == TokenType.OP_DIV) {
             dump("multiplicative_expression_1 -> \'/\' prefix_expression multiplicative_expression_1");
-            parseMultiplicativeExpression_1(lexicalSymbol);
+            return parseMultiplicativeExpression_1(lexicalSymbol, start, right, Binary.Operator.DIV);
         } else if (currentLexicalSym.tokenType == TokenType.OP_MOD) {
             dump("multiplicative_expression_1 -> \'%\' prefix_expression multiplicative_expression_1");
-            parseMultiplicativeExpression_1(lexicalSymbol);
+            return parseMultiplicativeExpression_1(lexicalSymbol, start, right, Binary.Operator.MOD);
         } else {
             dump("multiplicative_expression_1 -> ε");
-            lexicalSymbol.previous();
+            currentLexicalSym = lexicalSymbol.previous();
+            return new Binary(new Position(start, currentLexicalSym.position.end), left, op, right);
         }
     }
 
     private Unary parsePrefixExpression(ListIterator<Symbol> lexicalSymbol) {
         Symbol currentLexicalSym = lexicalSymbol.next();
+        Location start = currentLexicalSym.position.start;
+        Unary.Operator op = null;
+        Unary tempPrefix;
         if (currentLexicalSym.tokenType == TokenType.OP_ADD) {
             dump("prefix_expression -> \'+\' prefix_expression");
-            parsePrefixExpression(lexicalSymbol);
+            tempPrefix = parsePrefixExpression(lexicalSymbol);
+            op = Unary.Operator.ADD;
         } else if (currentLexicalSym.tokenType == TokenType.OP_SUB) {
             dump("prefix_expression -> \'-\' prefix_expression");
-            parsePrefixExpression(lexicalSymbol);
+            tempPrefix = parsePrefixExpression(lexicalSymbol);
+            op = Unary.Operator.SUB;
         } else if (currentLexicalSym.tokenType == TokenType.OP_NOT) {
             dump("prefix_expression -> \'!\' prefix_expression");
-            parsePrefixExpression(lexicalSymbol);
+            tempPrefix = parsePrefixExpression(lexicalSymbol);
+            op = Unary.Operator.NOT;
         } else {
             dump("prefix_expression -> postfix_expression");
             lexicalSymbol.previous();
-            parsePostfixExpression(lexicalSymbol);
+            tempPrefix = parsePostfixExpression(lexicalSymbol);
         }
+        return new Unary(new Position(start, currentLexicalSym.position.end), tempPrefix, op);
     }
 
     private Unary parsePostfixExpression(ListIterator<Symbol> lexicalSymbol) {

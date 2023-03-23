@@ -55,8 +55,7 @@ public class Parser {
     private Ast parseSource() {
         dump("source -> definitions");
         ListIterator<Symbol> symbol_iterator = symbols.listIterator();
-        String string = "";
-        var tempDefs = parseDefs(symbol_iterator, string);
+        var tempDefs = parseDefs(symbol_iterator);
         Symbol curr_sym = symbol_iterator.next();
         if (symbol_iterator.hasNext() && curr_sym.tokenType != TokenType.EOF) {
             Report.error(curr_sym.position, "There is no EOF at the end of file");
@@ -65,22 +64,21 @@ public class Parser {
             return tempDefs;
     }
 
-    private Defs parseDefs(ListIterator<Symbol> lexicalSymbol, String string) {
+    private Defs parseDefs(ListIterator<Symbol> lexicalSymbol) {
         Location start = lexicalSymbol.next().position.start;
         lexicalSymbol.previous();
         List<Def> defsList = new ArrayList<Def>();
         dump("definitions -> definition definitions_1");
-        defsList.add(parseDef(lexicalSymbol, string));
-        return parseDefs_1(lexicalSymbol, start, defsList, string);
+        defsList.add(parseDef(lexicalSymbol));
+        return parseDefs_1(lexicalSymbol, start, defsList);
     }
 
-    private Defs parseDefs_1(ListIterator<Symbol> lexicalSymbol, Location start, List<Def> defsList,
-            String string) {
+    private Defs parseDefs_1(ListIterator<Symbol> lexicalSymbol, Location start, List<Def> defsList) {
         Symbol currentLexicalSym = lexicalSymbol.next();
         if (currentLexicalSym.tokenType == TokenType.OP_SEMICOLON) {
             dump("definitions_1 -> ; definition definitions_1");
-            defsList.add(parseDef(lexicalSymbol, string));
-            return parseDefs_1(lexicalSymbol, start, defsList, string);
+            defsList.add(parseDef(lexicalSymbol));
+            return parseDefs_1(lexicalSymbol, start, defsList);
         } else {
             dump("definitions_1 -> ε");
             var tempDefs = new Defs(new Position(start, defsList.get(defsList.size() - 1).position.end), defsList);
@@ -89,24 +87,24 @@ public class Parser {
         }
     }
 
-    private Def parseDef(ListIterator<Symbol> lexicalSymbol, String string) {
+    private Def parseDef(ListIterator<Symbol> lexicalSymbol) {
         Symbol currentLexicalSym = lexicalSymbol.next();
         if (currentLexicalSym.tokenType == TokenType.KW_TYP) {
             dump("definition -> type_definition");
-            return parseTypeDef(lexicalSymbol, currentLexicalSym.position.start, string);
+            return parseTypeDef(lexicalSymbol, currentLexicalSym.position.start);
         } else if (currentLexicalSym.tokenType == TokenType.KW_FUN) {
             dump("definition -> function_definition");
-            return parseFunDef(lexicalSymbol, currentLexicalSym.position.start, string);
+            return parseFunDef(lexicalSymbol, currentLexicalSym.position.start);
         } else if (currentLexicalSym.tokenType == TokenType.KW_VAR) {
             dump("definition -> variable_definition");
-            return parseVarDef(lexicalSymbol, currentLexicalSym.position.start, string);
+            return parseVarDef(lexicalSymbol, currentLexicalSym.position.start);
         } else {
             Report.error(currentLexicalSym.position, "Wrong definition statment");
             return null;
         }
     }
 
-    private TypeDef parseTypeDef(ListIterator<Symbol> lexicalSymbol, Location start, String string) {
+    private TypeDef parseTypeDef(ListIterator<Symbol> lexicalSymbol, Location start) {
         String tmp = "";
         dump("type_definition -> typ id : type");
         Symbol currentLexicalSym = lexicalSymbol.next();
@@ -116,15 +114,13 @@ public class Parser {
         currentLexicalSym = lexicalSymbol.next();
         if (currentLexicalSym.tokenType != TokenType.OP_COLON)
             Report.error(currentLexicalSym.position, "After type definition identifier a colon \':\' must follow");
-        string += tmp + " ";
-        Type tempType = parseType(lexicalSymbol, string);
+        Type tempType = parseType(lexicalSymbol);
         return new TypeDef(new Position(start, tempType.position.end), tmp.toString(), tempType);
     }
 
-    private Type parseType(ListIterator<Symbol> lexicalSymbol, String string) {
+    private Type parseType(ListIterator<Symbol> lexicalSymbol) {
         Symbol currentLexicalSym = lexicalSymbol.next();
         Location start = currentLexicalSym.position.start;
-        string += currentLexicalSym.lexeme;
         if (currentLexicalSym.tokenType == TokenType.AT_LOGICAL) {
             dump("type -> logical");
             return Atom.LOG(currentLexicalSym.position);
@@ -139,26 +135,22 @@ public class Parser {
             currentLexicalSym = lexicalSymbol.next();
             if (currentLexicalSym.tokenType != TokenType.OP_LBRACKET)
                 Report.error(currentLexicalSym.position, "Specifying arr lenght must be enclosed in square brackets");
-            string += currentLexicalSym.lexeme + " ";
             currentLexicalSym = lexicalSymbol.next();
             if (currentLexicalSym.tokenType != TokenType.C_INTEGER)
                 Report.error(currentLexicalSym.position, "Array arr lenght must be an integer");
             int size = Integer.parseInt(currentLexicalSym.lexeme);
-            string += currentLexicalSym.lexeme + " ";
             currentLexicalSym = lexicalSymbol.next();
             if (currentLexicalSym.tokenType != TokenType.OP_RBRACKET)
                 Report.error(currentLexicalSym.position, "Specifying arr lenght must be enclosed in square brackets");
-            string += currentLexicalSym.lexeme + " ";
-            var tempType = parseType(lexicalSymbol, string);
+            var tempType = parseType(lexicalSymbol);
             return new Array(new Position(start, tempType.position.end), size, tempType);
         } else {
             dump("type -> id");
-            string += currentLexicalSym.lexeme + " ";
             return new TypeName(currentLexicalSym.position, currentLexicalSym.lexeme);
         }
     }
 
-    private FunDef parseFunDef(ListIterator<Symbol> lexicalSymbol, Location start, String string) {
+    private FunDef parseFunDef(ListIterator<Symbol> lexicalSymbol, Location start) {
         dump("function_definition -> fun id \'(\' parameters \')\' \':\' type \'=\' expression");
         String tmp = "";
         Symbol currentLexicalSym = lexicalSymbol.next();
@@ -170,7 +162,7 @@ public class Parser {
         if (currentLexicalSym.tokenType != TokenType.OP_LPARENT)
             Report.error(currentLexicalSym.position,
                     "Function parameters should be enclosed in paranthesis, the left one is missing or misplaced");
-        var tempParams = parseParams(lexicalSymbol, tmp);
+        var tempParams = parseParams(lexicalSymbol);
 
         currentLexicalSym = lexicalSymbol.next();
         if (currentLexicalSym.tokenType != TokenType.OP_RPARENT)
@@ -182,24 +174,23 @@ public class Parser {
             Report.error(currentLexicalSym.position,
                     "Following function declaration a colon is required to denote the body");
 
-        string += tmp + " ";
-        var tempType = parseType(lexicalSymbol, string);
+        var tempType = parseType(lexicalSymbol);
         currentLexicalSym = lexicalSymbol.next();
         if (currentLexicalSym.tokenType != TokenType.OP_ASSIGN)
             Report.error(currentLexicalSym.position,
                     "Following the type in a function declaration an assignment operator is required");
-        var tempExpr = parseExpression(lexicalSymbol, string);
+        var tempExpr = parseExpression(lexicalSymbol);
         return new FunDef(new Position(start, tempExpr.position.end), tmp, tempParams, tempType, tempExpr);
     }
 
-    private Expr parseExpression(ListIterator<Symbol> lexicalSymbol, String string) {
+    private Expr parseExpression(ListIterator<Symbol> lexicalSymbol) {
         dump("expression -> logical_ior_expression expression_1");
         var logicalExpr = parseLogicalOrExpression(lexicalSymbol);
         Symbol currentLexicalSym = lexicalSymbol.next();
+        Location start = currentLexicalSym.position.start;
         if (currentLexicalSym.tokenType == TokenType.OP_LBRACE) {
             dump("expression_1 -> { WHERE definitions }");
-            Location start = currentLexicalSym.position.start;
-            return parseExpression_1(lexicalSymbol, start, logicalExpr, string);
+            return parseExpression_1(lexicalSymbol, start, logicalExpr);
         } else {
             dump("expression_1 -> ε");
             lexicalSymbol.previous();
@@ -207,19 +198,18 @@ public class Parser {
         }
     }
 
-    private Expr parseExpression_1(ListIterator<Symbol> lexicalSymbol, Location start, Expr logicalExpr,
-            String string) {
+    private Expr parseExpression_1(ListIterator<Symbol> lexicalSymbol, Location start, Expr logicalExpr) {
         Symbol currentLexicalSym = lexicalSymbol.next();
         if (currentLexicalSym.tokenType != TokenType.KW_WHERE)
             Report.error(currentLexicalSym.position,
                     "The keyword where is required after left brace in expression following a logical or expression");
-        var tempDefs = parseDefs(lexicalSymbol, string);
+        var tempDefs = parseDefs(lexicalSymbol);
         currentLexicalSym = lexicalSymbol.next();
         Location end = currentLexicalSym.position.end;
         if (currentLexicalSym.tokenType != TokenType.OP_RBRACE)
             Report.error(currentLexicalSym.position,
                     "After definitions in a where definitions statemetn a right brace should close the block");
-        return new Where(new Position(start, end), logicalExpr, tempDefs);
+        return new Where(new Position(logicalExpr.position.start, end), logicalExpr, tempDefs);
     }
 
     private Expr parseLogicalOrExpression(ListIterator<Symbol> lexicalSymbol) {
@@ -239,14 +229,16 @@ public class Parser {
 
     private Binary parseLogicalOrExpression_1(ListIterator<Symbol> lexicalSymbol, Location start, Expr left) {
         var right = parseLogicalAndExpression(lexicalSymbol);
+        var tempBinary = new Binary(new Position(left.position.start, right.position.end), left, Binary.Operator.OR,
+                right);
         Symbol currentLexicalSym = lexicalSymbol.next();
         if (currentLexicalSym.tokenType == TokenType.OP_OR) {
             dump("logical_ior_expression_1 -> \'|\' logical_and_expression logical_ior_expression_1");
-            return parseLogicalOrExpression_1(lexicalSymbol, start, right);
+            return parseLogicalOrExpression_1(lexicalSymbol, start, tempBinary);
         } else {
             dump("logical_ior_expression_1 -> ε");
             currentLexicalSym = lexicalSymbol.previous();
-            return new Binary(new Position(start, currentLexicalSym.position.end), left, Binary.Operator.OR, right);
+            return tempBinary;
         }
     }
 
@@ -254,7 +246,7 @@ public class Parser {
         dump("logical_and_expression -> compare_expression logical_and_expression_1");
         var tempComp = parseCompareExpression(lexicalSymbol);
         Symbol currentLexicalSym = lexicalSymbol.next();
-        Location start = currentLexicalSym.position.start;
+        Location start = tempComp.position.start;
         if (currentLexicalSym.tokenType == TokenType.OP_AND) {
             dump("logical_and_expression_1 -> \'&\' compare_expression logical_and_expression_1");
             return parseLogicalAndExpression_1(lexicalSymbol, start, tempComp);
@@ -267,14 +259,16 @@ public class Parser {
 
     private Binary parseLogicalAndExpression_1(ListIterator<Symbol> lexicalSymbol, Location start, Expr left) {
         var right = parseCompareExpression(lexicalSymbol);
+        var tempBinary = new Binary(new Position(left.position.start, right.position.end), left, Binary.Operator.AND,
+                right);
         Symbol currentLexicalSym = lexicalSymbol.next();
         if (currentLexicalSym.tokenType == TokenType.OP_AND) {
             dump("logical_and_expression_1 -> \'&\' compare_expression logical_and_expression_1");
-            return parseLogicalAndExpression_1(lexicalSymbol, start, right);
+            return parseLogicalAndExpression_1(lexicalSymbol, start, tempBinary);
         } else {
             dump("logical_and_expression_1 -> ε");
             currentLexicalSym = lexicalSymbol.previous();
-            return new Binary(new Position(start, currentLexicalSym.position.end), left, Binary.Operator.AND, right);
+            return tempBinary;
         }
     }
 
@@ -282,29 +276,34 @@ public class Parser {
         dump("compare_expression -> additive_expr compare_expression_1");
         var tempAdditive = parseAdditiveExpression(lexicalSymbol);
         Symbol currentLexicalSym = lexicalSymbol.next();
-        Location start = currentLexicalSym.position.start;
         switch (currentLexicalSym.tokenType) {
             case OP_EQ:
                 dump("compare_expression_1 -> \'==\' additive_expr");
-                return parseCompareExpression_1(lexicalSymbol, start, tempAdditive, Binary.Operator.EQ);
+                return parseCompareExpression_1(lexicalSymbol, tempAdditive.position.start, tempAdditive,
+                        Binary.Operator.EQ);
             case OP_LEQ:
                 dump("compare_expression_1 -> \'<=\' additive_expr");
-                return parseCompareExpression_1(lexicalSymbol, start, tempAdditive, Binary.Operator.LEQ);
+                return parseCompareExpression_1(lexicalSymbol, tempAdditive.position.start, tempAdditive,
+                        Binary.Operator.LEQ);
             case OP_GEQ:
                 dump("compare_expression_1 -> \'>=\' additive_expr");
-                return parseCompareExpression_1(lexicalSymbol, start, tempAdditive, Binary.Operator.GEQ);
+                return parseCompareExpression_1(lexicalSymbol, tempAdditive.position.start, tempAdditive,
+                        Binary.Operator.GEQ);
             case OP_NEQ:
                 dump("compare_expression_1 -> \'!=\' additive_expr");
-                return parseCompareExpression_1(lexicalSymbol, start, tempAdditive, Binary.Operator.NEQ);
+                return parseCompareExpression_1(lexicalSymbol, tempAdditive.position.start, tempAdditive,
+                        Binary.Operator.NEQ);
             case OP_GT:
                 dump("compare_expression_1 -> \'>\' additive_expr");
-                return parseCompareExpression_1(lexicalSymbol, start, tempAdditive, Binary.Operator.GT);
+                return parseCompareExpression_1(lexicalSymbol, tempAdditive.position.start, tempAdditive,
+                        Binary.Operator.GT);
             case OP_LT:
                 dump("compare_expression_1 -> \'<\' additive_expr");
-                return parseCompareExpression_1(lexicalSymbol, start, tempAdditive, Binary.Operator.LT);
+                return parseCompareExpression_1(lexicalSymbol, tempAdditive.position.start, tempAdditive,
+                        Binary.Operator.LT);
             default:
                 dump("compare_expression_1 -> ε");
-                currentLexicalSym = lexicalSymbol.previous();
+                lexicalSymbol.previous();
                 return tempAdditive;
         }
     }
@@ -319,13 +318,12 @@ public class Parser {
         dump("additive_expr -> multiplicative_expression additive_expression_1");
         var tempMult = parseMultiplicativeExpression(lexicalSymbol);
         Symbol currentLexicalSym = lexicalSymbol.next();
-        Location start = currentLexicalSym.position.start;
         if (currentLexicalSym.tokenType == TokenType.OP_ADD) {
             dump("additive_expression_1 -> \'+\' multiplicative_expression additive_expression_1");
-            return parseAdditiveExpression_1(lexicalSymbol, start, tempMult, Binary.Operator.ADD);
+            return parseAdditiveExpression_1(lexicalSymbol, tempMult.position.start, tempMult, Binary.Operator.ADD);
         } else if (currentLexicalSym.tokenType == TokenType.OP_SUB) {
             dump("additive_expression_1 -> \'-\' multiplicative_expression additive_expression_1");
-            return parseAdditiveExpression_1(lexicalSymbol, start, tempMult, Binary.Operator.SUB);
+            return parseAdditiveExpression_1(lexicalSymbol, tempMult.position.start, tempMult, Binary.Operator.SUB);
         } else {
             dump("additive_expression_1 -> ε");
             currentLexicalSym = lexicalSymbol.previous();
@@ -336,19 +334,20 @@ public class Parser {
     private Binary parseAdditiveExpression_1(ListIterator<Symbol> lexicalSymbol, Location start, Expr left,
             Binary.Operator op) {
         var right = parseMultiplicativeExpression(lexicalSymbol);
+        var tempBinary = new Binary(new Position(left.position.start, right.position.end), left, op, right);
         Symbol currentLexicalSym = lexicalSymbol.next();
         if (currentLexicalSym.tokenType == TokenType.OP_ADD) {
             dump("additive_expression_1 -> \'+\' multiplicative_expression additive_expression_1");
             op = Binary.Operator.ADD;
-            return parseAdditiveExpression_1(lexicalSymbol, start, right, op);
+            return parseAdditiveExpression_1(lexicalSymbol, start, tempBinary, op);
         } else if (currentLexicalSym.tokenType == TokenType.OP_SUB) {
             dump("additive_expression_1 -> \'-\' multiplicative_expression additive_expression_1");
             op = Binary.Operator.SUB;
-            return parseAdditiveExpression_1(lexicalSymbol, start, right, op);
+            return parseAdditiveExpression_1(lexicalSymbol, start, tempBinary, op);
         } else {
             dump("additive_expression_1 -> ε");
-            currentLexicalSym = lexicalSymbol.previous();
-            return new Binary(new Position(start, currentLexicalSym.position.end), left, op, right);
+            lexicalSymbol.previous();
+            return tempBinary;
         }
     }
 
@@ -356,19 +355,21 @@ public class Parser {
         dump("multiplicative_expression -> prefix_expression multiplicative_expression_1");
         var tempPrefix = parsePrefixExpression(lexicalSymbol);
         Symbol currentLexicalSym = lexicalSymbol.next();
-        Location start = currentLexicalSym.position.start;
         if (currentLexicalSym.tokenType == TokenType.OP_MUL) {
             dump("multiplicative_expression_1 -> \'*\' prefix_expression multiplicative_expression_1");
-            return parseMultiplicativeExpression_1(lexicalSymbol, start, tempPrefix, Binary.Operator.MUL);
+            return parseMultiplicativeExpression_1(lexicalSymbol, tempPrefix.position.start, tempPrefix,
+                    Binary.Operator.MUL);
         } else if (currentLexicalSym.tokenType == TokenType.OP_DIV) {
             dump("multiplicative_expression_1 -> \'/\' prefix_expression multiplicative_expression_1");
-            return parseMultiplicativeExpression_1(lexicalSymbol, start, tempPrefix, Binary.Operator.DIV);
+            return parseMultiplicativeExpression_1(lexicalSymbol, tempPrefix.position.start, tempPrefix,
+                    Binary.Operator.DIV);
         } else if (currentLexicalSym.tokenType == TokenType.OP_MOD) {
             dump("multiplicative_expression_1 -> \'%\' prefix_expression multiplicative_expression_1");
-            return parseMultiplicativeExpression_1(lexicalSymbol, start, tempPrefix, Binary.Operator.MOD);
+            return parseMultiplicativeExpression_1(lexicalSymbol, tempPrefix.position.start, tempPrefix,
+                    Binary.Operator.MOD);
         } else {
             dump("multiplicative_expression_1 -> ε");
-            currentLexicalSym = lexicalSymbol.previous();
+            lexicalSymbol.previous();
             return tempPrefix;
         }
     }
@@ -376,20 +377,21 @@ public class Parser {
     private Binary parseMultiplicativeExpression_1(ListIterator<Symbol> lexicalSymbol, Location start, Expr left,
             Binary.Operator op) {
         var right = parsePrefixExpression(lexicalSymbol);
+        var tempBinary = new Binary(new Position(left.position.start, right.position.end), left, op, right);
         Symbol currentLexicalSym = lexicalSymbol.next();
         if (currentLexicalSym.tokenType == TokenType.OP_MUL) {
             dump("multiplicative_expression_1 -> \'*\' prefix_expression multiplicative_expression_1");
-            return parseMultiplicativeExpression_1(lexicalSymbol, start, right, Binary.Operator.MUL);
+            return parseMultiplicativeExpression_1(lexicalSymbol, start, tempBinary, Binary.Operator.MUL);
         } else if (currentLexicalSym.tokenType == TokenType.OP_DIV) {
             dump("multiplicative_expression_1 -> \'/\' prefix_expression multiplicative_expression_1");
-            return parseMultiplicativeExpression_1(lexicalSymbol, start, right, Binary.Operator.DIV);
+            return parseMultiplicativeExpression_1(lexicalSymbol, start, tempBinary, Binary.Operator.DIV);
         } else if (currentLexicalSym.tokenType == TokenType.OP_MOD) {
             dump("multiplicative_expression_1 -> \'%\' prefix_expression multiplicative_expression_1");
-            return parseMultiplicativeExpression_1(lexicalSymbol, start, right, Binary.Operator.MOD);
+            return parseMultiplicativeExpression_1(lexicalSymbol, start, tempBinary, Binary.Operator.MOD);
         } else {
             dump("multiplicative_expression_1 -> ε");
-            currentLexicalSym = lexicalSymbol.previous();
-            return new Binary(new Position(start, currentLexicalSym.position.end), left, op, right);
+            lexicalSymbol.previous();
+            return tempBinary;
         }
     }
 
@@ -416,38 +418,43 @@ public class Parser {
             tempPrefix = parsePostfixExpression(lexicalSymbol);
             return tempPrefix;
         }
-        return new Unary(new Position(start, currentLexicalSym.position.end), tempPrefix, op);
+        return new Unary(new Position(start, tempPrefix.position.end), tempPrefix, op);
     }
 
     private Expr parsePostfixExpression(ListIterator<Symbol> lexicalSymbol) {
         dump("postfix_expression -> atom_expression postfix_expression_1");
         Expr tempAtom = parseAtomExpression(lexicalSymbol);
         Symbol currentLexicalSym = lexicalSymbol.next();
-        Location start = currentLexicalSym.position.start;
-        Expr tempPosfix = null;
         if (currentLexicalSym.tokenType == TokenType.OP_LBRACKET) {
             dump("postfix_expression_1 -> \'[\' expression \']\' postfix_expression_1");
             lexicalSymbol.previous();
-            tempPosfix = parsePostfixExpression_1(lexicalSymbol);
-            return new Binary(new Position(start, currentLexicalSym.position.end), tempAtom, Binary.Operator.ARR,
-                    tempPosfix);
+            Location[] end = new Location[1];
+            var tempPosfix = parsePostfixExpression_1(lexicalSymbol, end);
+            return new Binary(new Position(tempAtom.position.start, end[0]), tempAtom, Binary.Operator.ARR, tempPosfix);
         } else {
             dump("postfix_expression_1 -> ε");
-            currentLexicalSym = lexicalSymbol.previous();
+            lexicalSymbol.previous();
             return tempAtom;
         }
     }
 
-    private Expr parsePostfixExpression_1(ListIterator<Symbol> lexicalSymbol) {
+    private Expr parsePostfixExpression_1(ListIterator<Symbol> lexicalSymbol, Location[] end) {
         Symbol currentLexicalSym = lexicalSymbol.next();
         if (currentLexicalSym.tokenType != TokenType.OP_LBRACKET)
             Report.error(currentLexicalSym.position, "Before expressions a left opening square bracket is required");
-        var tempExpr = parseExpression(lexicalSymbol, "");
+        var tempExpr = parseExpression(lexicalSymbol);
         currentLexicalSym = lexicalSymbol.next();
         if (currentLexicalSym.tokenType != TokenType.OP_RBRACKET)
             Report.error(currentLexicalSym.position,
                     "Following expressions a right closing square bracket is required");
-        return parsePostfixExpression(lexicalSymbol);
+        end[0] = currentLexicalSym.position.end;
+        currentLexicalSym = lexicalSymbol.next();
+        if (currentLexicalSym.tokenType == TokenType.OP_LBRACKET) {
+            return parsePostfixExpression_1(lexicalSymbol, end);
+        } else {
+            lexicalSymbol.previous();
+            return tempExpr;
+        }
     }
 
     private Expr parseAtomExpression(ListIterator<Symbol> lexicalSymbol) {
@@ -469,16 +476,16 @@ public class Parser {
             case IDENTIFIER:
                 dump("atom_expression -> id atom_expression_id");
                 currentLexicalSym = lexicalSymbol.next();
-                Location start = currentLexicalSym.position.start;
                 if (currentLexicalSym.tokenType == TokenType.OP_LPARENT) {
                     dump("atom_expression_id -> \'(\' expressions \')\'");
-                    var tempExprs = parseExpressions(lexicalSymbol);
+                    var tempExprs = parseExpressions(lexicalSymbol, currentLexicalSym.position.start);
                     currentLexicalSym = lexicalSymbol.next();
                     if (currentLexicalSym.tokenType != TokenType.OP_RPARENT)
                         Report.error(currentLexicalSym.position,
                                 "Expressions should be closed with a closing right paranthesis");
-                    return new Call(new Position(start, currentLexicalSym.position.end), tempExprs.expressions,
-                            currentLexicalSym.lexeme);
+                    return new Call(new Position(id.position.start, currentLexicalSym.position.end),
+                            tempExprs.expressions,
+                            id.lexeme);
                 } else {
                     dump("atom_expression_id -> ε");
                     lexicalSymbol.previous();
@@ -486,34 +493,33 @@ public class Parser {
                 }
             case OP_LPARENT:
                 dump("atom_expression -> \'(\' expressions \')\'");
-                var tempExprs = parseExpressions(lexicalSymbol);
+                var tempExprs = parseExpressions(lexicalSymbol, currentLexicalSym.position.start);
                 currentLexicalSym = lexicalSymbol.next();
                 if (currentLexicalSym.tokenType != TokenType.OP_RPARENT)
                     Report.error(currentLexicalSym.position,
                             "Expressions should be closed with a closing right paranthesis");
-                return new Block(currentLexicalSym.position, tempExprs.expressions);
+                return tempExprs;
             case OP_LBRACE:
                 dump("atom_expression -> \'{\' atom_expression_lbrace_1");
-                return parseAtomExpressionLBrace(lexicalSymbol);
+                return parseAtomExpressionLBrace(lexicalSymbol, currentLexicalSym.position.start);
             default:
                 lexicalSymbol.previous();
                 return null;
         }
     }
 
-    private Expr parseAtomExpressionLBrace(ListIterator<Symbol> lexicalSymbol) {
+    private Expr parseAtomExpressionLBrace(ListIterator<Symbol> lexicalSymbol, Location start) {
         Symbol currentLexicalSym = lexicalSymbol.next();
-        Location start = currentLexicalSym.position.start;
         switch (currentLexicalSym.tokenType) {
             case KW_IF:
                 dump("atom_expression_lbrace_1 -> if expression then expression if_else \'}\'");
-                var tempExpr1 = parseExpression(lexicalSymbol, "");
+                var tempExpr1 = parseExpression(lexicalSymbol);
                 currentLexicalSym = lexicalSymbol.next();
                 Optional<Expr> _else = null;
                 if (currentLexicalSym.tokenType != TokenType.KW_THEN)
                     Report.error(currentLexicalSym.position,
                             "In the if statement after condition a then keyword should follow");
-                var tempExpr2 = parseExpression(lexicalSymbol, "");
+                var tempExpr2 = parseExpression(lexicalSymbol);
                 currentLexicalSym = lexicalSymbol.next();
                 if (currentLexicalSym.tokenType != TokenType.OP_RBRACE) {
                     dump("if_else -> else expression");
@@ -529,11 +535,11 @@ public class Parser {
                 return new IfThenElse(new Position(start, currentLexicalSym.position.end), tempExpr1, tempExpr2, _else);
             case KW_WHILE:
                 dump("atom_expression_lbrace_1 -> while expression \':\' expression \'}\' .");
-                var tempExprWhileCond = parseExpression(lexicalSymbol, "");
+                var tempExprWhileCond = parseExpression(lexicalSymbol);
                 currentLexicalSym = lexicalSymbol.next();
                 if (currentLexicalSym.tokenType != TokenType.OP_COLON)
                     Report.error(currentLexicalSym.position, "After while condition a colon should follow");
-                var tempExprWhileExpr = parseExpression(lexicalSymbol, "");
+                var tempExprWhileExpr = parseExpression(lexicalSymbol);
                 currentLexicalSym = lexicalSymbol.next();
                 if (currentLexicalSym.tokenType != TokenType.OP_RBRACE)
                     Report.error(currentLexicalSym.position,
@@ -550,22 +556,22 @@ public class Parser {
                 if (currentLexicalSym.tokenType != TokenType.OP_ASSIGN)
                     Report.error(currentLexicalSym.position,
                             "Following a for identifier an assignment operator is required");
-                var tempExprFor1 = parseExpression(lexicalSymbol, "");
+                var tempExprFor1 = parseExpression(lexicalSymbol);
                 currentLexicalSym = lexicalSymbol.next();
                 if (currentLexicalSym.tokenType != TokenType.OP_COMMA)
                     Report.error(currentLexicalSym.position,
                             "After the first expression in for loop statement a comma is required");
-                var tempExprFor2 = parseExpression(lexicalSymbol, "");
+                var tempExprFor2 = parseExpression(lexicalSymbol);
                 currentLexicalSym = lexicalSymbol.next();
                 if (currentLexicalSym.tokenType != TokenType.OP_COMMA)
                     Report.error(currentLexicalSym.position,
                             "After the second expression in for loop statement a comma is required");
-                var tempExprFor3 = parseExpression(lexicalSymbol, "");
+                var tempExprFor3 = parseExpression(lexicalSymbol);
                 currentLexicalSym = lexicalSymbol.next();
                 if (currentLexicalSym.tokenType != TokenType.OP_COLON)
                     Report.error(currentLexicalSym.position,
                             "After the third expression in for loop statement a colon is required");
-                var tempForBody = parseExpression(lexicalSymbol, "");
+                var tempForBody = parseExpression(lexicalSymbol);
                 currentLexicalSym = lexicalSymbol.next();
                 if (currentLexicalSym.tokenType != TokenType.OP_RBRACE)
                     Report.error(currentLexicalSym.position,
@@ -576,12 +582,12 @@ public class Parser {
             default:
                 dump("atom_expression_lbrace_1 -> expression \'=\' expression \'}\'");
                 lexicalSymbol.previous();
-                var tempExprAss = parseExpression(lexicalSymbol, "");
+                var tempExprAss = parseExpression(lexicalSymbol);
                 currentLexicalSym = lexicalSymbol.next();
                 if (currentLexicalSym.tokenType != TokenType.OP_ASSIGN)
                     Report.error(currentLexicalSym.position,
                             "Following an expression an assignment operator is required in this statment");
-                var tempExprAss2 = parseExpression(lexicalSymbol, "");
+                var tempExprAss2 = parseExpression(lexicalSymbol);
                 currentLexicalSym = lexicalSymbol.next();
                 if (currentLexicalSym.tokenType != TokenType.OP_RBRACE)
                     Report.error(currentLexicalSym.position,
@@ -595,18 +601,17 @@ public class Parser {
         Symbol currentLexicalSym = lexicalSymbol.next();
         if (currentLexicalSym.tokenType != TokenType.KW_ELSE)
             Report.error(currentLexicalSym.position, "Either else statement or closing right brace expected");
-        return Optional.of(parseExpression(lexicalSymbol, ""));
+        return Optional.of(parseExpression(lexicalSymbol));
     }
 
-    private Block parseExpressions(ListIterator<Symbol> lexicalSymbol) {
+    private Block parseExpressions(ListIterator<Symbol> lexicalSymbol, Location start) {
         dump("expressions -> expression expressions_1");
         List<Expr> expressions = new ArrayList<Expr>();
-        expressions.add(parseExpression(lexicalSymbol, ""));
+        expressions.add(parseExpression(lexicalSymbol));
         Symbol currentLexicalSym = lexicalSymbol.next();
-        Location start = currentLexicalSym.position.start;
         if (currentLexicalSym.tokenType == TokenType.OP_COMMA) {
             dump("expressions_1 -> \',\' expression expressions_1");
-            return parseExpressions_1(lexicalSymbol, start, expressions);
+            return parseExpressions_1(lexicalSymbol, expressions, start);
         } else {
             dump("expressions_1 -> ε");
             currentLexicalSym = lexicalSymbol.previous();
@@ -614,12 +619,12 @@ public class Parser {
         }
     }
 
-    private Block parseExpressions_1(ListIterator<Symbol> lexicalSymbol, Location start, List<Expr> expressions) {
-        expressions.add(parseExpression(lexicalSymbol, ""));
+    private Block parseExpressions_1(ListIterator<Symbol> lexicalSymbol, List<Expr> expressions, Location start) {
+        expressions.add(parseExpression(lexicalSymbol));
         Symbol currentLexicalSym = lexicalSymbol.next();
         if (currentLexicalSym.tokenType == TokenType.OP_COMMA) {
             dump("expressions_1 -> \',\' expression expressions_1");
-            return parseExpressions_1(lexicalSymbol, start, expressions);
+            return parseExpressions_1(lexicalSymbol, expressions, start);
         } else {
             dump("expressions_1 -> ε");
             currentLexicalSym = lexicalSymbol.previous();
@@ -627,20 +632,20 @@ public class Parser {
         }
     }
 
-    private List<FunDef.Parameter> parseParams(ListIterator<Symbol> lexicalSymbol, String string) {
+    private List<FunDef.Parameter> parseParams(ListIterator<Symbol> lexicalSymbol) {
         List<FunDef.Parameter> paramsList = new ArrayList<FunDef.Parameter>();
         dump("parameters -> parameter parameters_1");
-        paramsList.add(parseParam(lexicalSymbol, string));
-        return parseParams_1(lexicalSymbol, paramsList, string);
+        paramsList.add(parseParam(lexicalSymbol));
+        return parseParams_1(lexicalSymbol, paramsList);
     }
 
-    private List<FunDef.Parameter> parseParams_1(ListIterator<Symbol> lexicalSymbol, List<FunDef.Parameter> paramsList,
-            String string) {
+    private List<FunDef.Parameter> parseParams_1(ListIterator<Symbol> lexicalSymbol,
+            List<FunDef.Parameter> paramsList) {
         Symbol currentLexicalSym = lexicalSymbol.next();
         if (currentLexicalSym.tokenType == TokenType.OP_COMMA) {
             dump("parameters_1 -> , parameter parameters_1");
-            paramsList.add(parseParam(lexicalSymbol, string));
-            return parseParams_1(lexicalSymbol, paramsList, string);
+            paramsList.add(parseParam(lexicalSymbol));
+            return parseParams_1(lexicalSymbol, paramsList);
         } else {
             dump("parameters_1 -> ε");
             lexicalSymbol.previous();
@@ -648,7 +653,7 @@ public class Parser {
         }
     }
 
-    private FunDef.Parameter parseParam(ListIterator<Symbol> lexicalSymbol, String string) {
+    private FunDef.Parameter parseParam(ListIterator<Symbol> lexicalSymbol) {
         dump("parameter -> id : type");
         Symbol currentLexicalSym = lexicalSymbol.next();
         Location start = currentLexicalSym.position.start;
@@ -658,12 +663,11 @@ public class Parser {
         currentLexicalSym = lexicalSymbol.next();
         if (currentLexicalSym.tokenType != TokenType.OP_COLON)
             Report.error(currentLexicalSym.position, "After parameter identificator a colon is required");
-        var tempType = parseType(lexicalSymbol, tmp);
-        string += tmp;
+        var tempType = parseType(lexicalSymbol);
         return new FunDef.Parameter(new Position(start, tempType.position.end), tmp.toString(), tempType);
     }
 
-    private VarDef parseVarDef(ListIterator<Symbol> lexicalSymbol, Location start, String string) {
+    private VarDef parseVarDef(ListIterator<Symbol> lexicalSymbol, Location start) {
         String tmp = "";
         Symbol currentLexicalSym = lexicalSymbol.next();
         tmp += currentLexicalSym.lexeme;
@@ -673,8 +677,7 @@ public class Parser {
         currentLexicalSym = lexicalSymbol.next();
         if (currentLexicalSym.tokenType != TokenType.OP_COLON)
             Report.error(currentLexicalSym.position, "After variable definition identifier a colon \':\' must follow");
-        string += tmp + " ";
-        var tempType = parseType(lexicalSymbol, string);
+        var tempType = parseType(lexicalSymbol);
         return new VarDef(new Position(start, tempType.position.end), tmp, tempType);
     }
 

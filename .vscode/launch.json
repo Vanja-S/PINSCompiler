@@ -18,7 +18,7 @@
             "request": "launch",
             "mainClass": "App",
             "projectName": "PINSCompiler_aaffa8a2",
-            "args": "test ./ ./TestsRunner/tests/3-ast.tst -v"
+            "args": "test ./ TestsRunner/tests/3-ast-popravljeno-v1.tst -v"
         },
         {
             "type": "java",

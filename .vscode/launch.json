@@ -6,25 +6,25 @@
     "configurations": [
         {
             "type": "java",
+            "name": "Main",
+            "request": "launch",
+            "mainClass": "Main",
+            "projectName": "PINSCompiler_aaffa8a2",
+            "args": "PINS --exec AST --dump AST test3.pns"
+        },
+        {
+            "type": "java",
             "name": "App",
             "request": "launch",
             "mainClass": "App",
-            "projectName": "PINS-compiler_7d951449",
-            "args": "test ./ ./TestsRunner/tests/2-parser.tst -v"
+            "projectName": "PINSCompiler_aaffa8a2",
+            "args": "test ./ TestsRunner/tests/3-ast-popravljeno-v1.tst -v"
         },
         {
             "type": "java",
             "name": "Launch Current File",
             "request": "launch",
             "mainClass": "${file}"
-        },
-        {
-            "type": "java",
-            "name": "Launch Main",
-            "request": "launch",
-            "mainClass": "Main",
-            "projectName": "PINS-compiler_7d951449",
-            "args": "PINS --exec SYN --dump SYN test4.pns"
         }
     ]
 }

@@ -120,7 +120,6 @@ public class Lexer {
         boolean comment = false;
 
         for (; i < source.length(); i++, inline_start_index++, inline_stop_index++) {
-
             // CR char spregledamo
             if ((int) source.charAt(i) == 0xd) {
                 continue;

@@ -31,6 +31,7 @@ public class Parser {
     /**
      * Seznam leksikalnih simbolov.
      */
+    @SuppressWarnings("unused")
     private final List<Symbol> symbols;
     private final ListIterator<Symbol> symbol_iterator;
 
@@ -501,7 +502,7 @@ public class Parser {
                 dump("atom_expression -> \'{\' atom_expression_lbrace_1");
                 return parseAtomExpressionLBrace(currentLexicalSym.position.start);
             default:
-                symbol_iterator.previous();
+                Report.error(currentLexicalSym.position, "Unexpected symbol");
                 return null;
         }
     }

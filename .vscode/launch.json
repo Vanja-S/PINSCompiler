@@ -10,7 +10,7 @@
             "request": "launch",
             "mainClass": "Main",
             "projectName": "PINSCompiler_aaffa8a2",
-            "args": "PINS --exec AST --dump AST test3.pns"
+            "args": "PINS --exec SYN --dump SYN test.pns"
         },
         {
             "type": "java",

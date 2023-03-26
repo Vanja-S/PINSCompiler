@@ -1,6 +1,6 @@
 /**
- * @ Author: turk
- * @ Description: Visitor, ki izpiše AST.
+ * @Author: turk
+ * @Description: Visitor, ki izpiše AST.
  */
 
 package compiler.common;

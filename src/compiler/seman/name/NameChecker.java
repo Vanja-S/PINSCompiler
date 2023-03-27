@@ -111,7 +111,7 @@ public class NameChecker implements Visitor {
     @Override
     public void visit(FunDef funDef) {
         try {
-            if(definitions.store(funDef.name, funDef)) {
+            if(definitions.store(funDef, funDef)) {
                 symbolTable.insert(funDef);
             }
         } catch(Exception e) {

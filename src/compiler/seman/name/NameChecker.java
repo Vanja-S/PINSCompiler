@@ -34,9 +34,8 @@ public class NameChecker implements Visitor {
      * Ustvari nov razreševalnik imen.
      */
     public NameChecker(
-        NodeDescription<Def> definitions,
-        SymbolTable symbolTable
-    ) {
+            NodeDescription<Def> definitions,
+            SymbolTable symbolTable) {
         requireNonNull(definitions, symbolTable);
         this.definitions = definitions;
         this.symbolTable = symbolTable;
@@ -44,108 +43,113 @@ public class NameChecker implements Visitor {
 
     @Override
     public void visit(Call call) {
-        //TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
 
     @Override
     public void visit(Binary binary) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+
     }
 
     @Override
     public void visit(Block block) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        symbolTable.pushScope();
     }
 
     @Override
     public void visit(For forLoop) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        symbolTable.pushScope();
     }
 
     @Override
     public void visit(Name name) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        // store
     }
 
     @Override
     public void visit(IfThenElse ifThenElse) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
 
     @Override
     public void visit(Literal literal) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        // prazen
     }
 
     @Override
     public void visit(Unary unary) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
 
     @Override
     public void visit(While whileLoop) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
 
     @Override
     public void visit(Where where) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        symbolTable.pushScope();
     }
 
     @Override
     public void visit(Defs defs) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        // v simbolno insertas definicije in parametre
+        /*
+         * nek name -> symbolTable.definitionFor
+         * definitions.store(defFor, object)
+         * 
+         * fun, where -> new scope
+         * new scope po temu ko pregledas tipe
+         */
+        for (Def def : defs.definitions) {
+            if (def instanceof FunDef) {
+                visit((FunDef) def);
+            } else if (def instanceof TypeDef) {
+                visit((TypeDef) def);
+            } else if (def instanceof VarDef) {
+                visit((VarDef) def);
+            }
+        }
     }
 
     @Override
     public void visit(FunDef funDef) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        try {
+            if(definitions.store(funDef.name, funDef)) {
+                symbolTable.insert(funDef);
+            }
+        } catch(Exception e) {
+            Report.error(funDef.position, e.getMessage());
+        }
     }
 
     @Override
     public void visit(TypeDef typeDef) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
 
     @Override
     public void visit(VarDef varDef) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
 
     @Override
     public void visit(Parameter parameter) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
 
     @Override
     public void visit(Array array) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
 
     @Override
     public void visit(Atom atom) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        // prazen
     }
 
     @Override
     public void visit(TypeName name) {
-        
+        // insert
+    }
+
+    private void visitType(Type type) {
+        // if stavki za instance od typa ast.type
+    }
+
+    private void visitExpr(Expr expr) {
+        // if stavki za innstance od ast.expr
     }
 }

@@ -1,3 +1,5 @@
-fun f(x: integer, y: string) : integer = {
+var x: integer;
+fun f(x: integer, y: string) : buyu = {
     if z == 10 then 20 else blalba[1][2][3]
-}
+};
+typ buyu : x

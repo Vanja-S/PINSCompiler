@@ -101,7 +101,7 @@ public class Parser {
             dump("definition -> variable_definition");
             return parseVarDef(currentLexicalSym.position.start);
         } else {
-            Report.error(currentLexicalSym.position, "Wrong definition statment");
+            Report.error(currentLexicalSym.position, "Wrong definition statment or prohibited extra semicolon at last definition");
             return null;
         }
     }
@@ -650,7 +650,7 @@ public class Parser {
         if (currentLexicalSym.tokenType != TokenType.OP_COLON)
             Report.error(currentLexicalSym.position, "After parameter identificator a colon is required");
         var tempType = parseType();
-        return new FunDef.Parameter(new Position(start, tempType.position.end), tmp.toString(), tempType);
+        return new FunDef.Parameter(new Position(start, tempType.position.end), tmp, tempType);
     }
 
     private VarDef parseVarDef(Location start) {

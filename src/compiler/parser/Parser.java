@@ -427,9 +427,7 @@ public class Parser {
         if (currentLexicalSym.tokenType == TokenType.OP_LBRACKET) {
             dump("postfix_expression_1 -> \'[\' expression \']\' postfix_expression_1");
             symbol_iterator.previous();
-            Location[] end = new Location[1];
-            var tempPosfix = parsePostfixExpression_1(end);
-            return new Binary(new Position(tempAtom.position.start, end[0]), tempAtom, Binary.Operator.ARR, tempPosfix);
+            return parsePostfixExpression_1(tempAtom);
         } else {
             dump("postfix_expression_1 -> ε");
             symbol_iterator.previous();
@@ -437,7 +435,7 @@ public class Parser {
         }
     }
 
-    private Expr parsePostfixExpression_1(Location[] end) {
+    private Expr parsePostfixExpression_1(Expr leftExpr) {
         Symbol currentLexicalSym = symbol_iterator.next();
         if (currentLexicalSym.tokenType != TokenType.OP_LBRACKET)
             Report.error(currentLexicalSym.position, "Before expressions a left opening square bracket is required");
@@ -446,13 +444,14 @@ public class Parser {
         if (currentLexicalSym.tokenType != TokenType.OP_RBRACKET)
             Report.error(currentLexicalSym.position,
                     "Following expressions a right closing square bracket is required");
-        end[0] = currentLexicalSym.position.end;
         currentLexicalSym = symbol_iterator.next();
         if (currentLexicalSym.tokenType == TokenType.OP_LBRACKET) {
-            return parsePostfixExpression_1(end);
+            var tempBinary = new Binary(new Position(leftExpr.position.start, tempExpr.position.end), leftExpr,Binary.Operator.ARR, tempExpr);
+            return parsePostfixExpression_1(tempBinary);
         } else {
             symbol_iterator.previous();
-            return tempExpr;
+            return new Binary(new Position(leftExpr.position.start, tempExpr.position.end), leftExpr,
+                    Binary.Operator.ARR, tempExpr);
         }
     }
 

@@ -121,10 +121,24 @@ public class NameChecker implements Visitor {
 
     @Override
     public void visit(TypeDef typeDef) {
+        try {
+            if(definitions.store(typeDef, typeDef)) {
+                symbolTable.insert(typeDef);
+            }
+        } catch(Exception e) {
+            Report.error(typeDef.position, e.getMessage());
+        }
     }
 
     @Override
     public void visit(VarDef varDef) {
+        try {
+            if(definitions.store(varDef, varDef)) {
+                symbolTable.insert(varDef);
+            }
+        } catch(Exception e) {
+            Report.error(varDef.position, e.getMessage());
+        }
     }
 
     @Override

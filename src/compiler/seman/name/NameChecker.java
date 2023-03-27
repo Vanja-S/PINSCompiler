@@ -44,7 +44,7 @@ public class NameChecker implements Visitor {
 
     @Override
     public void visit(Call call) {
-        // TODO Auto-generated method stub
+        //TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'visit'");
     }
 
@@ -146,7 +146,6 @@ public class NameChecker implements Visitor {
 
     @Override
     public void visit(TypeName name) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'visit'");
+        
     }
 }

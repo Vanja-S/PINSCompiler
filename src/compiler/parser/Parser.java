@@ -254,7 +254,7 @@ public class Parser {
             return parseLogicalAndExpression_1(start, tempComp);
         } else {
             dump("logical_and_expression_1 -> ε");
-            currentLexicalSym = symbol_iterator.previous();
+            symbol_iterator.previous();
             return tempComp;
         }
     }
@@ -327,7 +327,7 @@ public class Parser {
             return parseAdditiveExpression_1(tempMult.position.start, tempMult, Binary.Operator.SUB);
         } else {
             dump("additive_expression_1 -> ε");
-            currentLexicalSym = symbol_iterator.previous();
+            symbol_iterator.previous();
             return tempMult;
         }
     }
@@ -423,35 +423,24 @@ public class Parser {
     private Expr parsePostfixExpression() {
         dump("postfix_expression -> atom_expression postfix_expression_1");
         Expr tempAtom = parseAtomExpression();
-        Symbol currentLexicalSym = symbol_iterator.next();
-        if (currentLexicalSym.tokenType == TokenType.OP_LBRACKET) {
-            dump("postfix_expression_1 -> \'[\' expression \']\' postfix_expression_1");
-            symbol_iterator.previous();
-            return parsePostfixExpression_1(tempAtom);
-        } else {
-            dump("postfix_expression_1 -> ε");
-            symbol_iterator.previous();
-            return tempAtom;
-        }
+        return parsePostfixExpression_1(tempAtom);
     }
 
     private Expr parsePostfixExpression_1(Expr leftExpr) {
+        // [ expression ] postfix_expression_1
         Symbol currentLexicalSym = symbol_iterator.next();
-        if (currentLexicalSym.tokenType != TokenType.OP_LBRACKET)
-            Report.error(currentLexicalSym.position, "Before expressions a left opening square bracket is required");
-        var tempExpr = parseExpression();
-        currentLexicalSym = symbol_iterator.next();
-        if (currentLexicalSym.tokenType != TokenType.OP_RBRACKET)
-            Report.error(currentLexicalSym.position,
-                    "Following expressions a right closing square bracket is required");
-        currentLexicalSym = symbol_iterator.next();
-        if (currentLexicalSym.tokenType == TokenType.OP_LBRACKET) {
-            var tempBinary = new Binary(new Position(leftExpr.position.start, tempExpr.position.end), leftExpr,Binary.Operator.ARR, tempExpr);
+        if(currentLexicalSym.tokenType == TokenType.OP_LBRACKET) {
+            var tempExpr = parseExpression();
+            currentLexicalSym = symbol_iterator.next();
+            if(currentLexicalSym.tokenType != TokenType.OP_RBRACKET) 
+                Report.error(currentLexicalSym.position, "An array indexing has to be closed with a right closing bracket");
+            var tempBinary = new Binary(new Position(leftExpr.position.start, currentLexicalSym.position.end), leftExpr, Binary.Operator.ARR, tempExpr);
             return parsePostfixExpression_1(tempBinary);
-        } else {
+        }
+        else {
+            dump("postfix_expression_1 -> ε");
             symbol_iterator.previous();
-            return new Binary(new Position(leftExpr.position.start, tempExpr.position.end), leftExpr,
-                    Binary.Operator.ARR, tempExpr);
+            return leftExpr;
         }
     }
 

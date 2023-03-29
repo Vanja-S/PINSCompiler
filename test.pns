@@ -1,3 +1,1 @@
-typ t1 : t2;
-typ t3 : logical;
-typ t2 : t3
+fun f ( x : logical) : integer = a[1][2][3]

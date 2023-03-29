@@ -106,6 +106,7 @@ public class NameChecker implements Visitor {
         symbolTable.pushScope();
         visit(where.defs);
         visit(where.expr);
+        symbolTable.popScope();
     }
 
     @Override
@@ -118,6 +119,14 @@ public class NameChecker implements Visitor {
          * fun, where -> new scope
          * new scope po temu ko pregledas tipe
          */
+        for (Def def : defs.definitions) {
+            try {
+                symbolTable.insert(def);
+            } catch (Exception e) {
+                Report.error(def.position, "Definition already exists and cannot be duplicated!");
+            }
+        }
+
         for (Def def : defs.definitions) {
             if (def instanceof FunDef) {
                 visit((FunDef) def);
@@ -132,12 +141,12 @@ public class NameChecker implements Visitor {
     @Override
     public void visit(FunDef funDef) {
         try {
-            symbolTable.insert(funDef);
             symbolTable.pushScope();
             for (Parameter param : funDef.parameters) {
                 visit(param);
             }
             visit(funDef.body);
+            symbolTable.popScope();
         } catch (Exception e) {
             Report.error(funDef.position, e.getMessage());
         }
@@ -145,21 +154,12 @@ public class NameChecker implements Visitor {
 
     @Override
     public void visit(TypeDef typeDef) {
-        try {
-            symbolTable.insert(typeDef);
-            definitions.store(symbolTable.definitionFor(typeDef.name).get(), typeDef.type);
-        } catch (Exception e) {
-            Report.error(typeDef.position, e.getMessage());
-        }
+        visit(typeDef.type);
     }
 
     @Override
     public void visit(VarDef varDef) {
-        try {
-            symbolTable.insert(varDef);
-        } catch (Exception e) {
-            Report.error(varDef.position, e.getMessage());
-        }
+        visit(varDef.type);
     }
 
     @Override

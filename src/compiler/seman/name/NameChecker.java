@@ -7,14 +7,14 @@ package compiler.seman.name;
 
 import static common.RequireNonNull.requireNonNull;
 
-import javax.lang.model.util.ElementScanner14;
-
 import common.Report;
+import common.VoidOperator;
 import compiler.common.Visitor;
 import compiler.lexer.Position;
 import compiler.parser.ast.def.*;
 import compiler.parser.ast.def.FunDef.Parameter;
 import compiler.parser.ast.expr.*;
+import compiler.parser.ast.expr.Binary.Operator;
 import compiler.parser.ast.type.*;
 import compiler.seman.common.NodeDescription;
 import compiler.seman.name.env.SymbolTable;
@@ -45,15 +45,31 @@ public class NameChecker implements Visitor {
 
     @Override
     public void visit(Call call) {
-        for (Expr expr : call.arguments) {
-            visit(expr);
+        try {
+            if (!(symbolTable.definitionFor(call.name).get() instanceof FunDef)) {
+                throw new Exception(call.name + " is not a FunDef, but a "
+                        + symbolTable.definitionFor(call.name).get().getClass());
+            }
+            for (Expr expr : call.arguments) {
+                visit(expr);
+            }
+        } catch (Exception e) {
+            Report.error(call.position, e.getMessage());
         }
     }
 
     @Override
     public void visit(Binary binary) {
-        visit(binary.left);
-        visit(binary.right);
+        try {
+            if(binary.left instanceof Name) {
+                if(symbolTable.definitionFor(((Name)binary.left).name).get() instanceof FunDef)
+                    throw new Exception(binary.left + " is a FunDef not a VarDef");
+            }
+            visit(binary.left);
+            visit(binary.right);
+        } catch (Exception e) {
+            Report.error(binary.position, e.getMessage());
+        }
     }
 
     @Override
@@ -167,9 +183,10 @@ public class NameChecker implements Visitor {
     @Override
     public void visit(Parameter parameter) {
         try {
-            symbolTable.insert(parameter);
+            visit(parameter.type);
+            symbolTable.insert(parameter); 
         } catch (Exception e) {
-            Report.error(parameter.position, "Parameter already defined!");
+            Report.error(parameter.position, e.getMessage());
         }
     }
 
@@ -186,6 +203,9 @@ public class NameChecker implements Visitor {
     @Override
     public void visit(TypeName name) {
         try {
+            if (!(symbolTable.definitionFor(name.identifier).get() instanceof TypeDef)) {
+                throw new Exception(name.identifier + " is not a TypeDef, but a " + name.getClass());
+            }
             definitions.store(symbolTable.definitionFor(name.identifier).get(), name);
         } catch (Exception e) {
             Report.error(name.position, e.getMessage());
@@ -199,8 +219,8 @@ public class NameChecker implements Visitor {
             visit((Atom) type);
         } else if (type instanceof TypeName) {
             visit((TypeName) type);
-        }
-        else Report.error(type.position, "Wrong type passed into VarDef (" + type.getClass() + ")");
+        } else
+            Report.error(type.position, "Wrong type passed into VarDef (" + type.getClass() + ")");
     }
 
     private void visit(Expr expr) {

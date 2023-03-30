@@ -95,28 +95,7 @@ typ x : integer;
 var y : x;
 fun f(x:x, y:x) : x = x + y + 1
 !expected:
-Defs [1:1-3:32]
-  TypeDef [1:1-1:16]: x
-    Atom [1:9-1:16]: INT
-  VarDef [2:1-2:10]: y
-    TypeName [2:9-2:10]: x
-      # defined at: [1:1-1:16]
-  FunDef [3:1-3:32]: f
-    Parameter [3:7-3:10]: x
-      TypeName [3:9-3:10]: x
-        # defined at: [1:1-1:16]
-    Parameter [3:12-3:15]: y
-      TypeName [3:14-3:15]: x
-        # defined at: [1:1-1:16]
-    TypeName [3:19-3:20]: x
-      # defined at: [1:1-1:16]
-    Binary [3:23-3:32]: ADD
-      Binary [3:23-3:28]: ADD
-        Name [3:23-3:24]: x
-          # defined at: [3:7-3:10]
-        Name [3:27-3:28]: y
-          # defined at: [3:12-3:15]
-      Literal [3:31-3:32]: INT(1)
+99
 !end
 
 

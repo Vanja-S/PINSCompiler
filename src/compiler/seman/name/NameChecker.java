@@ -163,6 +163,7 @@ public class NameChecker implements Visitor {
             for (Parameter param : funDef.parameters) {
                 visit(param);
             }
+            visit(funDef.type);
             visit(funDef.body);
             symbolTable.popScope();
         } catch (Exception e) {

@@ -7,6 +7,8 @@ package compiler.seman.name;
 
 import static common.RequireNonNull.requireNonNull;
 
+import javax.lang.model.util.ElementScanner14;
+
 import common.Report;
 import compiler.common.Visitor;
 import compiler.lexer.Position;
@@ -198,6 +200,7 @@ public class NameChecker implements Visitor {
         } else if (type instanceof TypeName) {
             visit((TypeName) type);
         }
+        else Report.error(type.position, "Wrong type passed into VarDef (" + type.getClass() + ")");
     }
 
     private void visit(Expr expr) {

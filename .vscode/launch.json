@@ -18,7 +18,7 @@
             "request": "launch",
             "mainClass": "App",
             "projectName": "PINSCompiler_aaffa8a2",
-            "args": "test ./ TestsRunner/tests/4-seman-names.tst -v"
+            "args": "test ./ TestsRunner/tests/4-name.tst -v"
         },
         {
             "type": "java",

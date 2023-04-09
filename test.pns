@@ -1,1 +1,2 @@
-fun f(x:integer) : integer = f[10]
+var x : integer;
+fun f(x : integer) : integer = f(x)

@@ -7,6 +7,10 @@ package compiler.seman.name;
 
 import static common.RequireNonNull.requireNonNull;
 
+import java.util.Optional;
+
+import javax.lang.model.util.ElementScanner14;
+
 import common.Report;
 import common.VoidOperator;
 import compiler.common.Visitor;
@@ -50,6 +54,7 @@ public class NameChecker implements Visitor {
                 throw new Exception(call.name + " is not a FunDef, but a "
                         + symbolTable.definitionFor(call.name).get().getClass());
             }
+            definitions.store(symbolTable.definitionFor(call.name).get(), call);
             for (Expr expr : call.arguments) {
                 visit(expr);
             }
@@ -61,8 +66,8 @@ public class NameChecker implements Visitor {
     @Override
     public void visit(Binary binary) {
         try {
-            if(binary.left instanceof Name) {
-                if(symbolTable.definitionFor(((Name)binary.left).name).get() instanceof FunDef)
+            if (binary.left instanceof Name) {
+                if (symbolTable.definitionFor(((Name) binary.left).name).get() instanceof FunDef)
                     throw new Exception(binary.left + " is a FunDef not a VarDef");
             }
             visit(binary.left);
@@ -106,6 +111,11 @@ public class NameChecker implements Visitor {
 
     @Override
     public void visit(Literal literal) {
+        try {
+            definitions.store(symbolTable.definitionFor(literal.value).get(), literal);
+        } catch (Exception e) {
+            Report.error(literal.position, "The literal " + literal.value + " is not valid!");
+        }
     }
 
     @Override
@@ -129,21 +139,13 @@ public class NameChecker implements Visitor {
 
     @Override
     public void visit(Defs defs) {
-        // v simbolno insertas definicije in parametre
-        /*
-         * nek name -> symbolTable.definitionFor
-         * definitions.store(defFor, object)
-         * 
-         * fun, where -> new scope
-         * new scope po temu ko pregledas tipe
-         */
-        for (Def def : defs.definitions) {
+        defs.definitions.forEach(def -> {
             try {
                 symbolTable.insert(def);
-            } catch (Exception e) {
-                Report.error(def.position, "Definition already exists and cannot be duplicated!");
+            } catch (DefinitionAlreadyExistsException e) {
+                Report.error("Definition '" + def.name + "' already exists");
             }
-        }
+        });
 
         for (Def def : defs.definitions) {
             if (def instanceof FunDef) {
@@ -152,6 +154,8 @@ public class NameChecker implements Visitor {
                 visit((TypeDef) def);
             } else if (def instanceof VarDef) {
                 visit((VarDef) def);
+            } else {
+                Report.error(def.position, "Non-valid definition!");
             }
         }
     }
@@ -159,13 +163,18 @@ public class NameChecker implements Visitor {
     @Override
     public void visit(FunDef funDef) {
         try {
-            symbolTable.pushScope();
-            for (Parameter param : funDef.parameters) {
-                visit(param);
-            }
+            funDef.parameters.forEach(param -> visit(param.type));
             visit(funDef.type);
-            visit(funDef.body);
-            symbolTable.popScope();
+            symbolTable.inNewScope(() -> {
+                funDef.parameters.forEach(param -> {
+                    try {
+                        symbolTable.insert(param);
+                    } catch (DefinitionAlreadyExistsException e) {
+                        Report.error(param.position, "Parameter already exists: " + param.toString());
+                    }
+                });
+                visit(funDef.body);
+            });
         } catch (Exception e) {
             Report.error(funDef.position, e.getMessage());
         }
@@ -185,7 +194,6 @@ public class NameChecker implements Visitor {
     public void visit(Parameter parameter) {
         try {
             visit(parameter.type);
-            symbolTable.insert(parameter); 
         } catch (Exception e) {
             Report.error(parameter.position, e.getMessage());
         }
@@ -193,12 +201,11 @@ public class NameChecker implements Visitor {
 
     @Override
     public void visit(Array array) {
-
+        visit(array.type);
     }
 
     @Override
     public void visit(Atom atom) {
-        // prazen
     }
 
     @Override
@@ -221,7 +228,7 @@ public class NameChecker implements Visitor {
         } else if (type instanceof TypeName) {
             visit((TypeName) type);
         } else
-            Report.error(type.position, "Wrong type passed into VarDef (" + type.getClass() + ")");
+            Report.error(type.position, "Non-valid type!");
     }
 
     private void visit(Expr expr) {
@@ -245,6 +252,8 @@ public class NameChecker implements Visitor {
             visit((Where) expr);
         } else if (expr instanceof While) {
             visit((While) expr);
+        } else {
+            Report.error(expr.position, "Unknown expression!");
         }
     }
 }

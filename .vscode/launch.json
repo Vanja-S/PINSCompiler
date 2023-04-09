@@ -10,7 +10,7 @@
             "request": "launch",
             "mainClass": "Main",
             "projectName": "PINSCompiler_aaffa8a2",
-            "args": "PINS --exec NAME --dump NAME test.pns"
+            "args": "PINS --exec TYPE --dump TYPE test.pns"
         },
         {
             "type": "java",

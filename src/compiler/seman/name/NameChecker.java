@@ -111,11 +111,8 @@ public class NameChecker implements Visitor {
 
     @Override
     public void visit(Literal literal) {
-        try {
-            definitions.store(symbolTable.definitionFor(literal.value).get(), literal);
-        } catch (Exception e) {
-            Report.error(literal.position, "The literal " + literal.value + " is not valid!");
-        }
+        Optional<Def> defFor = symbolTable.definitionFor(literal.value);
+        defFor.ifPresent(def -> definitions.store(def, literal));
     }
 
     @Override

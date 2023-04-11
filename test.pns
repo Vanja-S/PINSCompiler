@@ -1,2 +1,6 @@
-var x : integer;
-fun f(x : integer) : integer = f(x)
+typ log : logical;
+typ int : integer;
+var y : int;
+var x : arr [20] int;
+
+fun f (x: int) : int = 10

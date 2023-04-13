@@ -11,21 +11,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import javax.lang.model.type.TypeKind;
-
-import java.util.HashMap;
-import java.util.HashSet;
-
 import common.Report;
 import compiler.common.Visitor;
 import compiler.parser.ast.def.*;
 import compiler.parser.ast.def.FunDef.Parameter;
 import compiler.parser.ast.expr.*;
-import compiler.parser.ast.expr.Binary.Operator;
 import compiler.parser.ast.type.*;
 import compiler.seman.common.NodeDescription;
 import compiler.seman.type.type.Type;
-import compiler.seman.type.type.Type.Atom.Kind;
 
 public class TypeChecker implements Visitor {
     /**
@@ -293,30 +286,5 @@ public class TypeChecker implements Visitor {
         } catch (Exception e) {
             Report.error(name.position, "The type is not defined!");
         }
-    }
-
-    private void visit(Expr expr) {
-        if (expr instanceof Binary) {
-            visit((Binary) expr);
-        } else if (expr instanceof Block) {
-            visit((Block) expr);
-        } else if (expr instanceof Call) {
-            visit((Call) expr);
-        } else if (expr instanceof For) {
-            visit((For) expr);
-        } else if (expr instanceof IfThenElse) {
-            visit((IfThenElse) expr);
-        } else if (expr instanceof Literal) {
-            visit((Literal) expr);
-        } else if (expr instanceof Name) {
-            visit((Name) expr);
-        } else if (expr instanceof Unary) {
-            visit((Unary) expr);
-        } else if (expr instanceof Where) {
-            visit((Where) expr);
-        } else if (expr instanceof While) {
-            visit((While) expr);
-        } else
-            Report.error(expr.position, "Unknown expression!");
     }
 }

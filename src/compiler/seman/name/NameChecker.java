@@ -9,16 +9,11 @@ import static common.RequireNonNull.requireNonNull;
 
 import java.util.Optional;
 
-import javax.lang.model.util.ElementScanner14;
-
 import common.Report;
-import common.VoidOperator;
 import compiler.common.Visitor;
-import compiler.lexer.Position;
 import compiler.parser.ast.def.*;
 import compiler.parser.ast.def.FunDef.Parameter;
 import compiler.parser.ast.expr.*;
-import compiler.parser.ast.expr.Binary.Operator;
 import compiler.parser.ast.type.*;
 import compiler.seman.common.NodeDescription;
 import compiler.seman.name.env.SymbolTable;

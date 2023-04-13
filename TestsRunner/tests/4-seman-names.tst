@@ -1,8 +1,8 @@
 !compiler_flags: --dump NAME --exec NAME
 
 !code:
+var y : logical;
 var x : integer;
-fun f ( y : integer ) : logical = x + y
 !expected:
 Defs [1:1-2:40]
   VarDef [1:1-1:16]: x

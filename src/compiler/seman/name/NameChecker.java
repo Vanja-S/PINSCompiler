@@ -145,12 +145,12 @@ public class NameChecker implements Visitor {
         });
 
         for (Def def : defs.definitions) {
-            if (def instanceof FunDef) {
-                visit((FunDef) def);
-            } else if (def instanceof TypeDef) {
-                visit((TypeDef) def);
-            } else if (def instanceof VarDef) {
-                visit((VarDef) def);
+            if (def instanceof FunDef funDef) {
+                visit(funDef);
+            } else if (def instanceof TypeDef typeDef) {
+                visit(typeDef);
+            } else if (def instanceof VarDef varDef) {
+                visit(varDef);
             } else {
                 Report.error(def.position, "Non-valid definition!");
             }

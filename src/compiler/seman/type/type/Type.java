@@ -133,7 +133,7 @@ public abstract class Type {
 
         @Override
         public boolean equals(Type t) {
-            throw new RuntimeException("Implementiraj ...");
+            return t.isAtom() && this.kind == ((Atom) t).kind ? true : false;
         }
 
         @Override
@@ -193,7 +193,7 @@ public abstract class Type {
 
         @Override
         public boolean equals(Type t) {
-            throw new RuntimeException("Implementiraj ...");
+            return t.isArray() && this.type == ((Array) t).type ? true : false;
         }
 
         @Override
@@ -235,7 +235,7 @@ public abstract class Type {
 
         @Override
         public boolean equals(Type t) {
-            throw new RuntimeException("Implementiraj ...");
+            return t.isFunction() && this.returnType == ((Function) t).returnType ? true : false;
         }
 
         @Override

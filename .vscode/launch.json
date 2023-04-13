@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "App$CLI",
+            "request": "launch",
+            "mainClass": "App$CLI",
+            "projectName": "PINSCompiler_aaffa8a2"
+        },
+        {
+            "type": "java",
             "name": "Main",
             "request": "launch",
             "mainClass": "Main",
@@ -18,7 +25,7 @@
             "request": "launch",
             "mainClass": "App",
             "projectName": "PINSCompiler_aaffa8a2",
-            "args": "test ./ TestsRunner/tests/4-name.tst -v"
+            "args": "test ./ TestsRunner/tests/5-typ.tst -v"
         },
         {
             "type": "java",

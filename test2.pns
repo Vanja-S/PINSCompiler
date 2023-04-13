@@ -1,6 +1,4 @@
-integer    i = 123;
-nevem nevem nevem
-string s = 'a''bc';
-logical = true;
-if (i >= 3)
-tet_32 = #jnvjknvjkfnvkjsndvkjnfvkjdnvkjn
+typ int : integer;
+typ log : logical;
+var neki : arr [10] arr [10] int;
+fun f (x: arr [10] arr [10] int, y: log) : arr [10] int = {x[0][0] = neki[0][0]}

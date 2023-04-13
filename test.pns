@@ -1,1 +1,4 @@
-fun f(x: integer): integer = (f(10, 10), 10)
+typ int : integer;
+typ log : logical;
+var neki : arr [10] arr [10] int;
+fun f (x: arr [10] arr [10] int, y: log) : int = {x[0][0] = neki[0][0]}

@@ -101,7 +101,9 @@ public class NameChecker implements Visitor {
     public void visit(IfThenElse ifThenElse) {
         visit(ifThenElse.condition);
         visit(ifThenElse.thenExpression);
-        visit(ifThenElse.elseExpression.get());
+        if(ifThenElse.elseExpression.isPresent()) {
+            visit(ifThenElse.elseExpression.get());
+        }
     }
 
     @Override

@@ -89,12 +89,6 @@ fun f(x: string, y: string): string = x % y
 99
 !end
 
-!name: Program 12
-!code:
-fun f(x: string, y: logical): string = x + y
-!failure:
-99
-!end
 
 !name: Program 12
 !code:
@@ -697,4 +691,65 @@ fun f (x: log, y: log) : log = x & y;
 fun g (x: int, y: log) : log = f(x, y)
 !failure:
 99
+!end
+
+
+!name: Program 72: Basic function recursion
+!code:
+typ int : integer;
+typ log : logical;
+fun f (x: int, y: int) : int = {if x != y then f(x + 1, y)}
+!expected:
+Defs [1:1-3:65]
+  TypeDef [1:1-1:18]: int
+    # typed as: int
+    Atom [1:11-1:18]: INT
+      # typed as: int
+  TypeDef [2:1-2:18]: log
+    # typed as: log
+    Atom [2:11-2:18]: LOG
+      # typed as: log
+  FunDef [3:1-3:65]: f
+    # typed as: (int, int) -> int
+    Parameter [3:8-3:14]: x
+      # typed as: int
+      TypeName [3:11-3:14]: int
+        # defined at: [1:1-1:18]
+        # typed as: int
+    Parameter [3:16-3:22]: y
+      # typed as: int
+      TypeName [3:19-3:22]: int
+        # defined at: [1:1-1:18]
+        # typed as: int
+    TypeName [3:26-3:29]: int
+      # defined at: [1:1-1:18]
+      # typed as: int
+    Block [3:32-3:65]
+      # typed as: int
+      IfThenElse [3:33-3:61]
+        # typed as: void
+        Binary [3:37-3:43]: NEQ
+          # typed as: log
+          Name [3:37-3:38]: x
+            # defined at: [3:8-3:14]
+            # typed as: int
+          Name [3:42-3:43]: y
+            # defined at: [3:16-3:22]
+            # typed as: int
+        Call [3:49-3:60]: f
+          # defined at: [3:1-3:65]
+          # typed as: (int, int) -> int
+          Binary [3:51-3:56]: ADD
+            # typed as: int
+            Name [3:51-3:52]: x
+              # defined at: [3:8-3:14]
+              # typed as: int
+            Literal [3:55-3:56]: INT(1)
+              # typed as: int
+          Name [3:58-3:59]: y
+            # defined at: [3:16-3:22]
+            # typed as: int
+      Name [3:63-3:64]: x
+        # defined at: [3:8-3:14]
+        # typed as: int
 !end

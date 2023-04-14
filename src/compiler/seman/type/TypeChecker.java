@@ -236,7 +236,6 @@ public class TypeChecker implements Visitor {
             paramTypes.add(types.valueFor(param).get());
         });
         funDef.type.accept(this);
-        // definitions.store(funDef, funDef.type);
         types.store(new Type.Function(paramTypes, types.valueFor(funDef.type).get()), funDef);
         funDef.body.accept(this);
         if (!(types.valueFor(funDef.body).get().equals(types.valueFor(funDef.type).get()))) {

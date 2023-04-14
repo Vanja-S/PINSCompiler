@@ -688,3 +688,13 @@ fun f (x: log, y: log) : int = x & y
 !failure:
 99
 !end
+
+!name: Program 71: Basic FunDef and function call with wrong argument types
+!code:
+typ int : integer;
+typ log : logical;
+fun f (x: log, y: log) : log = x & y;
+fun g (x: int, y: log) : log = f(x, y)
+!failure:
+99
+!end

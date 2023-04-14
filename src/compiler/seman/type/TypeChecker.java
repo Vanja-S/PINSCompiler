@@ -47,6 +47,15 @@ public class TypeChecker implements Visitor {
             if (call.arguments.size() != ((FunDef) definitions.valueFor(call).get()).parameters.size()) {
                 Report.error(call.position, "Number of arguments does not comply with function definition");
             }
+            for (int i = 0; i < call.arguments.size(); i++) {
+                if (!types.valueFor(call.arguments.get(i)).get()
+                        .equals(types.valueFor(((FunDef) definitions.valueFor(call).get()).parameters.get(i)).get())) {
+                    Report.error(call.arguments.get(i).position,
+                            "This argument does not match the paramter type in function definition: "
+                                    + types.valueFor(call.arguments.get(i)).get() + " cannot be assigned to "
+                                    + types.valueFor(((FunDef) definitions.valueFor(call).get()).parameters.get(i)).get());
+                }
+            }
         } catch (Exception e) {
             Report.error(call.position, "Function is not defined");
         }

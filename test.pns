@@ -1,4 +1,4 @@
 typ int : integer;
 typ log : logical;
-var neki : arr [10] arr [10] int;
-fun f (x: arr [10] arr [10] int, y: log) : int = {x[0][0] = neki[0][0]}
+fun f (x: log, y: log) : log = x & y;
+fun g (x: int, y: log) : log = f(x, y)

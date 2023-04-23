@@ -67,7 +67,8 @@ public abstract class Type {
      * vrne `Optional.empty()`.
      */
     public Optional<Atom> asAtom() {
-        if (this instanceof Atom t) return Optional.of(t);
+        if (this instanceof Atom t)
+            return Optional.of(t);
         return Optional.empty();
     }
 
@@ -83,7 +84,8 @@ public abstract class Type {
      * vrne `Optional.empty()`.
      */
     public Optional<Array> asArray() {
-        if (this instanceof Array t) return Optional.of(t);
+        if (this instanceof Array t)
+            return Optional.of(t);
         return Optional.empty();
     }
 
@@ -99,7 +101,8 @@ public abstract class Type {
      * vrne `Optional.empty()`.
      */
     public Optional<Function> asFunction() {
-        if (this instanceof Function t) return Optional.of(t);
+        if (this instanceof Function t)
+            return Optional.of(t);
         return Optional.empty();
     }
 
@@ -123,12 +126,12 @@ public abstract class Type {
 
         @Override
         public int sizeInBytes() {
-            throw new RuntimeException("Implementiraj ...");
+            return this.kind.size;
         }
 
         @Override
         public int sizeInBytesAsParam() {
-            throw new RuntimeException("Implementiraj ...");
+            return 4;
         }
 
         @Override
@@ -139,10 +142,14 @@ public abstract class Type {
         @Override
         public String toString() {
             return switch (kind) {
-                case INT: yield "int";
-                case STR: yield "str";
-                case LOG: yield "log";
-                case VOID: yield "void";
+                case INT:
+                    yield "int";
+                case STR:
+                    yield "str";
+                case LOG:
+                    yield "log";
+                case VOID:
+                    yield "void";
             };
         }
 
@@ -179,12 +186,12 @@ public abstract class Type {
 
         @Override
         public int sizeInBytes() {
-            throw new RuntimeException("Implementiraj ...");
+            return (size * type.sizeInBytes());
         }
 
         @Override
         public int sizeInBytesAsParam() {
-            throw new RuntimeException("Implementiraj ...");
+            return 4;
         }
 
         public int elementSizeInBytes() {
@@ -198,7 +205,7 @@ public abstract class Type {
 
         @Override
         public String toString() {
-            return "ARR("+size+","+type.toString()+")";
+            return "ARR(" + size + "," + type.toString() + ")";
         }
     }
 
@@ -210,7 +217,7 @@ public abstract class Type {
          * Tipi parametrov.
          */
         public final List<Type> parameters;
-        
+
         /**
          * Tip, ki ga funkcija vrača.
          */
@@ -225,12 +232,12 @@ public abstract class Type {
 
         @Override
         public int sizeInBytes() {
-            throw new RuntimeException("Implementiraj ...");
+            return returnType.sizeInBytes();
         }
 
         @Override
         public int sizeInBytesAsParam() {
-            throw new RuntimeException("Implementiraj ...");
+            return 4;
         }
 
         @Override
@@ -241,9 +248,9 @@ public abstract class Type {
         @Override
         public String toString() {
             var params = parameters.stream()
-                .map(t -> t.toString())
-                .collect(Collectors.joining(", "));
-            return "(" +  params + ") -> " + returnType.toString();
+                    .map(t -> t.toString())
+                    .collect(Collectors.joining(", "));
+            return "(" + params + ") -> " + returnType.toString();
         }
     }
 }

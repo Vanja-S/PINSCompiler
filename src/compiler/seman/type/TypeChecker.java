@@ -39,25 +39,22 @@ public class TypeChecker implements Visitor {
 
     @Override
     public void visit(Call call) {
-        try {
-            types.store(types.valueFor(definitions.valueFor(call).get()).get(), call);
-            call.arguments.forEach(arg -> {
-                arg.accept(this);
-            });
-            if (call.arguments.size() != ((FunDef) definitions.valueFor(call).get()).parameters.size()) {
-                Report.error(call.position, "Number of arguments does not comply with function definition");
+        types.store(types.valueFor(definitions.valueFor(call).get()).get(), call);
+        call.arguments.forEach(arg -> {
+            arg.accept(this);
+        });
+        if (call.arguments.size() != ((FunDef) definitions.valueFor(call).get()).parameters.size()) {
+            Report.error(call.position, "Number of arguments does not comply with function definition");
+        }
+        for (int i = 0; i < call.arguments.size(); i++) {
+            if (!types.valueFor(call.arguments.get(i)).get()
+                    .equals(types.valueFor(((FunDef) definitions.valueFor(call).get()).parameters.get(i)).get())) {
+                Report.error(call.arguments.get(i).position,
+                        "This argument does not match the paramter type in function definition: "
+                                + types.valueFor(call.arguments.get(i)).get() + " cannot be assigned to "
+                                + types.valueFor(((FunDef) definitions.valueFor(call).get()).parameters.get(i))
+                                        .get());
             }
-            for (int i = 0; i < call.arguments.size(); i++) {
-                if (!types.valueFor(call.arguments.get(i)).get()
-                        .equals(types.valueFor(((FunDef) definitions.valueFor(call).get()).parameters.get(i)).get())) {
-                    Report.error(call.arguments.get(i).position,
-                            "This argument does not match the paramter type in function definition: "
-                                    + types.valueFor(call.arguments.get(i)).get() + " cannot be assigned to "
-                                    + types.valueFor(((FunDef) definitions.valueFor(call).get()).parameters.get(i)).get());
-                }
-            }
-        } catch (Exception e) {
-            Report.error(call.position, "Function is not defined");
         }
     }
 
@@ -66,42 +63,53 @@ public class TypeChecker implements Visitor {
         binary.left.accept(this);
         binary.right.accept(this);
 
-        var leftType = types.valueFor(binary.left);
-        var rightType = types.valueFor(binary.right);
+        var opleftType = types.valueFor(binary.left);
+        var oprightType = types.valueFor(binary.right);
 
-        if (rightType.isEmpty() || leftType.isEmpty())
+        if (oprightType.isEmpty() || opleftType.isEmpty())
             Report.error(binary.position, "Illegal types in binary expression");
 
+        var leftType = opleftType.get();
+        var rightType = oprightType.get();
+        if (rightType.isFunction() && leftType.isFunction()) {
+            leftType = leftType.asFunction().get().returnType;
+            rightType = rightType.asFunction().get().returnType;
+        } else if (rightType.isFunction()) {
+            rightType = rightType.asFunction().get().returnType;
+        } else if (leftType.isFunction()) {
+            leftType = leftType.asFunction().get().returnType;
+        }
+
         if (binary.operator.isArithmetic()) {
-            if (leftType.get().equals(rightType.get()) && leftType.get().isInt()) {
+            if (leftType.equals(rightType) && leftType.isInt()) {
                 types.store(new Type.Atom(Type.Atom.Kind.INT), binary);
             } else
-                Report.error(binary.position, "Non-valid types " + leftType.get() + " and " + rightType.get()
-                        + " for operation " + binary.operator);
+                Report.error(binary.position,
+                        "Non-valid types " + leftType + " and " + rightType + " for operation " + binary.operator);
         } else if (binary.operator.isAndOr()) {
-            if (leftType.get().equals(rightType.get()) && leftType.get().isLog()) {
+            if (leftType.equals(rightType) && leftType.isLog()) {
                 types.store(new Type.Atom(Type.Atom.Kind.LOG), binary);
             } else
-                Report.error(binary.position, "Non-valid types " + leftType.get() + " and " + rightType.get()
-                        + " for operation " + binary.operator);
+                Report.error(binary.position,
+                        "Non-valid types " + leftType + " and " + rightType + " for operation " + binary.operator);
         } else if (binary.operator.isComparison()) {
-            if (leftType.get().equals(rightType.get()) && (leftType.get().isInt() || leftType.get().isLog())) {
+            if (leftType.equals(rightType) && (leftType.isInt() || leftType.isLog())) {
                 types.store(new Type.Atom(Type.Atom.Kind.LOG), binary);
             } else
-                Report.error(binary.position, "Non-valid types " + leftType.get() + " and " + rightType.get()
+                Report.error(binary.position, "Non-valid types " + leftType + " and " + rightType
                         + " for operation " + binary.operator);
         } else if (binary.operator == Binary.Operator.ASSIGN) {
-            if (leftType.get().equals(rightType.get())
-                    && (leftType.get().isInt() || leftType.get().isLog() || leftType.get().isStr())) {
-                types.store(rightType.get(), binary);
+            if (leftType.equals(rightType)
+                    && (leftType.isInt() || leftType.isLog() || leftType.isStr())) {
+                types.store(rightType, binary);
             } else
-                Report.error(binary.position, "Non-valid types " + leftType.get() + " and " + rightType.get()
+                Report.error(binary.position, "Non-valid types " + leftType + " and " + rightType
                         + " for operation " + binary.operator);
         } else if (binary.operator == Binary.Operator.ARR) {
-            if (leftType.get().isArray() && rightType.get().isInt()) {
-                types.store(leftType.get().asArray().get().type, binary);
+            if (leftType.isArray() && rightType.isInt()) {
+                types.store(leftType.asArray().get().type, binary);
             } else
-                Report.error(binary.position, "Non-valid types " + leftType.get() + " and " + rightType.get()
+                Report.error(binary.position, "Non-valid types " + leftType + " and " + rightType
                         + " for operation " + binary.operator);
         } else
             Report.error(binary.position, "Wrong expression");
@@ -239,6 +247,10 @@ public class TypeChecker implements Visitor {
         types.store(new Type.Function(paramTypes, types.valueFor(funDef.type).get()), funDef);
         funDef.body.accept(this);
         if (!(types.valueFor(funDef.body).get().equals(types.valueFor(funDef.type).get()))) {
+            if (types.valueFor(funDef.body).get() instanceof Type.Function funDefBody) {
+                if (funDefBody.returnType.equals(types.valueFor(funDef.type).get()))
+                    return;
+            }
             Report.error(funDef.position, "Function return type " + types.valueFor(funDef.type).get()
                     + " does not match the return type of the body " + types.valueFor(funDef.body).get());
         }
@@ -289,6 +301,8 @@ public class TypeChecker implements Visitor {
     public void visit(TypeName name) {
         try {
             Optional<Def> temp = definitions.valueFor(name);
+            if (temp.isEmpty())
+                throw new Exception("null");
             Type neki = types.valueFor(temp.get()).get();
             types.store(neki, name);
         } catch (Exception e) {

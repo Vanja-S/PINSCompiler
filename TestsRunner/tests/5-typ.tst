@@ -698,7 +698,7 @@ fun g (x: int, y: log) : log = f(x, y)
 !code:
 typ int : integer;
 typ log : logical;
-fun f (x: int, y: int) : int = {if x != y then f(x + 1, y)}
+fun f (x: int, y: int) : int = ({if x != y then f(x + 1, y)}, x)
 !expected:
 Defs [1:1-3:65]
   TypeDef [1:1-1:18]: int

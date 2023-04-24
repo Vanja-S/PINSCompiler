@@ -30,16 +30,23 @@ public class TypeChecker implements Visitor {
      * Opis vozlišč, ki jim priredimo podatkovne tipe.
      */
     private NodeDescription<Type> types;
+    private List<Def> visited;
 
     public TypeChecker(NodeDescription<Def> definitions, NodeDescription<Type> types) {
         requireNonNull(definitions, types);
         this.definitions = definitions;
         this.types = types;
+        this.visited = new ArrayList<>();
     }
 
     @Override
     public void visit(Call call) {
-        types.store(types.valueFor(definitions.valueFor(call).get()).get(), call);
+        Optional<Type> funDefReturnType = types.valueFor(definitions.valueFor(call).get());
+        if (funDefReturnType.isEmpty()) {
+            ((FunDef) definitions.valueFor(call).get()).accept(this);
+            funDefReturnType = types.valueFor(definitions.valueFor(call).get());
+        }
+        types.store(funDefReturnType.get().asFunction().get().returnType, call);
         call.arguments.forEach(arg -> {
             arg.accept(this);
         });
@@ -218,21 +225,8 @@ public class TypeChecker implements Visitor {
     @Override
     public void visit(Defs defs) {
         defs.definitions.forEach(def -> {
-            if (def instanceof TypeDef typeDef) {
-                typeDef.accept(this);
-            }
-        });
-
-        defs.definitions.forEach(def -> {
-            if (def instanceof FunDef funDef) {
-                funDef.accept(this);
-            } else if (def instanceof TypeDef typeDef) {
-
-            } else if (def instanceof VarDef varDef) {
-                varDef.accept(this);
-            } else {
-                Report.error(def.position, "Non-valid definition!");
-            }
+            if (!visited.contains(def))
+                def.accept(this);
         });
     }
 
@@ -258,13 +252,14 @@ public class TypeChecker implements Visitor {
 
     @Override
     public void visit(TypeDef typeDef) {
+        checkRecursion(typeDef);
         typeDef.type.accept(this);
         types.store(types.valueFor(typeDef.type).get(), typeDef);
-        definitions.store(typeDef, typeDef.type);
     }
 
     @Override
     public void visit(VarDef varDef) {
+        checkRecursion(varDef);
         varDef.type.accept(this);
         types.store(types.valueFor(varDef.type).get(), varDef);
     }
@@ -299,14 +294,17 @@ public class TypeChecker implements Visitor {
 
     @Override
     public void visit(TypeName name) {
-        try {
-            Optional<Def> temp = definitions.valueFor(name);
-            if (temp.isEmpty())
-                throw new Exception("null");
-            Type neki = types.valueFor(temp.get()).get();
-            types.store(neki, name);
-        } catch (Exception e) {
-            Report.error(name.position, "The type is not defined!");
+        Def nameDef = definitions.valueFor(name).get();
+        if (types.valueFor(nameDef).isEmpty()) {
+            nameDef.accept(this);
         }
+        types.store(types.valueFor(nameDef).get(), name);
+    }
+
+    private void checkRecursion(Def def) {
+        if (visited.contains(def)) {
+            Report.error(def.position, "Definition recursion detected!");
+        }
+        visited.add(def);
     }
 }

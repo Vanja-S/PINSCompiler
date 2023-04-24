@@ -8,6 +8,7 @@ package compiler.frm;
 import static common.RequireNonNull.requireNonNull;
 
 import compiler.common.Visitor;
+import compiler.frm.Access.Local;
 import compiler.parser.ast.def.*;
 import compiler.parser.ast.def.FunDef.Parameter;
 import compiler.parser.ast.expr.*;
@@ -16,6 +17,10 @@ import compiler.parser.ast.type.Atom;
 import compiler.parser.ast.type.TypeName;
 import compiler.seman.common.NodeDescription;
 import compiler.seman.type.type.Type;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
 
 public class FrameEvaluator implements Visitor {
     /**
@@ -44,9 +49,14 @@ public class FrameEvaluator implements Visitor {
     private int staticLevel;
 
     /*
-     * Števec za stack offset
+     * Lista stackOffseta trenutnega staticLevel-a oz. funkcijskega klica
      */
-    private int stackOffset;
+    private List<StackOffsets> stackOffset;
+
+    /*
+     * Lista funkcijskih klicev
+     */
+    private List<Integer> functionCalls;
 
     public FrameEvaluator(
             NodeDescription<Frame> frames,
@@ -58,19 +68,27 @@ public class FrameEvaluator implements Visitor {
         this.accesses = accesses;
         this.definitions = definitions;
         this.types = types;
-        staticLevel = 1;
-        stackOffset = 0;
+
+        staticLevel = 0;
+        stackOffset = new ArrayList<StackOffsets>();
+
+        functionCalls = new ArrayList<Integer>();
     }
 
     @Override
     public void visit(Call call) {
-        if (staticLevel == 1) {
+        if (staticLevel == 0) {
             accesses.store(new Access.Global(types.valueFor(definitions.valueFor(call).get()).get().sizeInBytes(),
                     frames.valueFor(definitions.valueFor(call).get()).get().label), call);
         } else {
             accesses.store(new Access.Local(types.valueFor(definitions.valueFor(call).get()).get().sizeInBytes(),
-                    stackOffset, staticLevel), call);
+                    stackOffset.get(staticLevel - 1).getTopLocVarOffset(), staticLevel), call);
         }
+
+        int argSize = call.arguments.stream()
+                .map(argument -> types.valueFor(argument).get().sizeInBytesAsParam())
+                .reduce(0, Integer::sum);
+        functionCalls.set(staticLevel - 1, Math.max(functionCalls.get(staticLevel - 1).intValue(), argSize));
     }
 
     @Override
@@ -144,21 +162,30 @@ public class FrameEvaluator implements Visitor {
 
     @Override
     public void visit(FunDef funDef) {
+        stackOffset.add(new StackOffsets());
+        functionCalls.add(Integer.valueOf(0));
         compiler.frm.Frame.Builder Builder = null;
-        if (staticLevel == 1) {
-            Builder = new Frame.Builder(Frame.Label.named(funDef.name), staticLevel);
+        if (staticLevel == 0) {
+            Builder = new Frame.Builder(Frame.Label.named(funDef.name), ++staticLevel);
         } else {
-            Builder = new Frame.Builder(Frame.Label.nextAnonymous(), staticLevel);
+            Builder = new Frame.Builder(Frame.Label.nextAnonymous(), ++staticLevel);
         }
 
         for (Parameter param : funDef.parameters) {
             param.accept(this);
             Builder.addParameter(types.valueFor(param).get().sizeInBytesAsParam());
         }
-        staticLevel++;
         funDef.body.accept(this);
+
+        for (Integer Int : stackOffset.get(staticLevel - 1).locVarStackOffset) {
+            Builder.addLocalVariable(-Int.intValue());
+        }
+        Builder.addFunctionCall(functionCalls.get(staticLevel - 1).intValue());
+
         staticLevel--;
         frames.store(Builder.build(), funDef);
+        stackOffset.remove(staticLevel);
+        functionCalls.remove(staticLevel);
     }
 
     @Override
@@ -167,21 +194,28 @@ public class FrameEvaluator implements Visitor {
 
     @Override
     public void visit(VarDef varDef) {
-        if (staticLevel == 1) {
+        if (staticLevel == 0) {
             accesses.store(
                     new Access.Global(types.valueFor(varDef).get().sizeInBytes(), Frame.Label.named(varDef.name)),
                     varDef);
         } else {
-            accesses.store(new Access.Local(types.valueFor(varDef).get().sizeInBytes(), stackOffset, staticLevel),
+            stackOffset.get(staticLevel - 1).addLocVarToStack(types.valueFor(varDef).get().sizeInBytes());
+            accesses.store(
+                    new Access.Local(types.valueFor(varDef).get().sizeInBytes(),
+                            stackOffset.get(staticLevel - 1).getTopLocVarOffset(),
+                            staticLevel),
                     varDef);
-            stackOffset += types.valueFor(varDef).get().sizeInBytes();
         }
     }
 
     @Override
     public void visit(Parameter parameter) {
-        accesses.store(new Access.Parameter(types.valueFor(parameter).get().sizeInBytesAsParam(), stackOffset, staticLevel), parameter);
-        stackOffset += types.valueFor(parameter).get().sizeInBytesAsParam();
+        stackOffset.get(staticLevel - 1).addParamToStack(types.valueFor(parameter).get().sizeInBytesAsParam());
+        accesses.store(
+                new Access.Parameter(types.valueFor(parameter).get().sizeInBytesAsParam(),
+                        stackOffset.get(staticLevel - 1).paramStackOffset,
+                        staticLevel),
+                parameter);
     }
 
     @Override
@@ -194,5 +228,30 @@ public class FrameEvaluator implements Visitor {
 
     @Override
     public void visit(TypeName name) {
+    }
+
+    /*
+     * Razred za hranjenje podatke o skladu vsake funkcije
+     */
+    private class StackOffsets {
+        public int paramStackOffset;
+        public ArrayList<Integer> locVarStackOffset;
+
+        public StackOffsets() {
+            paramStackOffset = 0;
+            locVarStackOffset = new ArrayList<Integer>();
+        }
+
+        public void addParamToStack(int size) {
+            paramStackOffset += size;
+        }
+
+        public void addLocVarToStack(int size) {
+            locVarStackOffset.add(Integer.valueOf(-size));
+        }
+
+        public int getTopLocVarOffset() {
+            return locVarStackOffset.stream().reduce(0, Integer::sum);
+        }
     }
 }

@@ -17,7 +17,7 @@
             "request": "launch",
             "mainClass": "Main",
             "projectName": "PINSCompiler_aaffa8a2",
-            "args": "PINS --exec FRM --dump FRM test.pns"
+            "args": "PINS --exec IMC --dump IMC test.pns"
         },
         {
             "type": "java",

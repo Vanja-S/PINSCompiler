@@ -8,7 +8,6 @@ package compiler.frm;
 import static common.RequireNonNull.requireNonNull;
 
 import compiler.common.Visitor;
-import compiler.frm.Access.Local;
 import compiler.parser.ast.def.*;
 import compiler.parser.ast.def.FunDef.Parameter;
 import compiler.parser.ast.expr.*;
@@ -20,7 +19,6 @@ import compiler.seman.type.type.Type;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Stream;
 
 public class FrameEvaluator implements Visitor {
     /**
@@ -180,6 +178,8 @@ public class FrameEvaluator implements Visitor {
         for (Integer Int : stackOffset.get(staticLevel - 1).locVarStackOffset) {
             Builder.addLocalVariable(-Int.intValue());
         }
+        // StaticLink
+        Builder.addParameter(4);
         Builder.addFunctionCall(functionCalls.get(staticLevel - 1).intValue());
 
         staticLevel--;

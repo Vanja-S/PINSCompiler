@@ -17,7 +17,7 @@
             "request": "launch",
             "mainClass": "Main",
             "projectName": "PINSCompiler_aaffa8a2",
-            "args": "PINS --exec IMC --dump IMC test.pns"
+            "args": "PINS --exec FRM --dump FRM test.pns"
         },
         {
             "type": "java",
@@ -25,7 +25,7 @@
             "request": "launch",
             "mainClass": "App",
             "projectName": "PINSCompiler_aaffa8a2",
-            "args": "test ./ TestsRunner/tests/6-frm-1.tst -v"
+            "args": "test ./ TestsRunner/tests/6-frm.tst -v"
         },
         {
             "type": "java",

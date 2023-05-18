@@ -200,7 +200,7 @@ public abstract class Type {
 
         @Override
         public boolean equals(Type t) {
-            return t.isArray() && this.type == ((Array) t).type ? true : false;
+            return t.isArray() && this.type.equals(((Array) t).type) ? true : false;
         }
 
         @Override

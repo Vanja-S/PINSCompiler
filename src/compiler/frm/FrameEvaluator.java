@@ -20,6 +20,8 @@ import compiler.seman.type.type.Type;
 import java.util.ArrayList;
 import java.util.List;
 
+import common.Constants;
+
 public class FrameEvaluator implements Visitor {
     /**
      * Opis definicij funkcij in njihovih klicnih zapisov.
@@ -85,7 +87,7 @@ public class FrameEvaluator implements Visitor {
 
         int argSize = call.arguments.stream()
                 .map(argument -> types.valueFor(argument).get().sizeInBytesAsParam())
-                .reduce(0, Integer::sum);
+                .reduce(Constants.WordSize, Integer::sum);
         functionCalls.set(staticLevel - 1, Math.max(functionCalls.get(staticLevel - 1).intValue(), argSize));
     }
 

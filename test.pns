@@ -1,3 +1,1 @@
-var x : integer;
-
-fun f(x : integer): integer = x + 10
+fun f(x : arr [10] integer): arr [10] integer = f ( x ) {where fun f(x : arr [10] integer): arr [10] integer = x}

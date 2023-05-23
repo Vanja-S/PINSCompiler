@@ -284,8 +284,11 @@ public class IRCodeGenerator implements Visitor {
 
         var move = new MoveStmt(RV, bodyExpr);
 
+        var statements = new ArrayList<IRStmt>();
+        statements.add(funLabel);
+        statements.add(move);
         // Add the function code to chunks
-        chunks.add(new Chunk.CodeChunk(frames.valueFor(funDef).get(), new ExpStmt(bodyExpr)));
+        chunks.add(new Chunk.CodeChunk(frames.valueFor(funDef).get(), new SeqStmt(statements)));
         --staticLevel;
     }
 

@@ -1,1 +1,13 @@
-fun f(x : arr [10] integer): arr [10] integer = f ( x ) {where fun f(x : arr [10] integer): arr [10] integer = x}
+fun main(x: integer) : integer = (
+    {i = 2},
+    print_int(i),
+    {str = 'hello'},
+    print_str(str),
+    {bol = true},
+    print_log(bol),
+    seed(2),
+    print_int(rand_int(1,2)),
+    print_int(rand_int(1,100)),
+    print_int(rand_int(1,100)),
+    0
+) {where var i: integer; var str : string; var bol : logical}

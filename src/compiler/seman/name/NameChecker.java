@@ -18,6 +18,7 @@ import compiler.parser.ast.type.*;
 import compiler.seman.common.NodeDescription;
 import compiler.seman.name.env.SymbolTable;
 import compiler.seman.name.env.SymbolTable.DefinitionAlreadyExistsException;
+import common.StandardLibrary;
 
 public class NameChecker implements Visitor {
     /**
@@ -45,7 +46,13 @@ public class NameChecker implements Visitor {
     @Override
     public void visit(Call call) {
         try {
-            if (!(symbolTable.definitionFor(call.name).get() instanceof FunDef)) {
+            if(StandardLibrary.functions.containsKey(call.name)) {
+                for (Expr expr : call.arguments) {
+                    visit(expr);
+                }
+                return;
+            }
+            else if (!(symbolTable.definitionFor(call.name).get() instanceof FunDef)) {
                 throw new Exception(call.name + " is not a FunDef, but a "
                         + symbolTable.definitionFor(call.name).get().getClass());
             }
@@ -54,7 +61,7 @@ public class NameChecker implements Visitor {
                 visit(expr);
             }
         } catch (Exception e) {
-            Report.error(call.position, e.getMessage());
+            Report.error(call.position, "Called function not defined");
         }
     }
 

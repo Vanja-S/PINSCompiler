@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Optional;
 
 import common.Report;
+import common.StandardLibrary;
 import compiler.common.Visitor;
 import compiler.parser.ast.def.*;
 import compiler.parser.ast.def.FunDef.Parameter;
@@ -41,26 +42,47 @@ public class TypeChecker implements Visitor {
 
     @Override
     public void visit(Call call) {
-        Optional<Type> funDefReturnType = types.valueFor(definitions.valueFor(call).get());
-        if (funDefReturnType.isEmpty()) {
-            ((FunDef) definitions.valueFor(call).get()).accept(this);
-            funDefReturnType = types.valueFor(definitions.valueFor(call).get());
-        }
-        types.store(funDefReturnType.get().asFunction().get().returnType, call);
-        call.arguments.forEach(arg -> {
-            arg.accept(this);
-        });
-        if (call.arguments.size() != ((FunDef) definitions.valueFor(call).get()).parameters.size()) {
-            Report.error(call.position, "Number of arguments does not comply with function definition");
-        }
-        for (int i = 0; i < call.arguments.size(); i++) {
-            if (!types.valueFor(call.arguments.get(i)).get()
-                    .equals(types.valueFor(((FunDef) definitions.valueFor(call).get()).parameters.get(i)).get())) {
-                Report.error(call.arguments.get(i).position,
-                        "This argument does not match the paramter type in function definition: "
-                                + types.valueFor(call.arguments.get(i)).get() + " cannot be assigned to "
-                                + types.valueFor(((FunDef) definitions.valueFor(call).get()).parameters.get(i))
-                                        .get());
+        if (StandardLibrary.functions.containsKey(call.name)) {
+            types.store(StandardLibrary.functions.get(call.name).returnType, call);
+            call.arguments.forEach(arg -> {
+                arg.accept(this);
+            });
+
+            if (call.arguments.size() != StandardLibrary.functions.get(call.name).numOfArgs) {
+                Report.error(call.position,
+                        "Number of arguments does not comply with the standard function definition for " + call.name);
+            }
+
+            for (int i = 0; i < call.arguments.size(); i++) {
+                if(!types.valueFor(call.arguments.get(i)).get().equals(StandardLibrary.functions.get(call.name).args.get(i))) {
+                    Report.error(call.arguments.get(i).position,
+                            "This argument does not match the paramter type in function definition: "
+                                    + types.valueFor(call.arguments.get(i)).get() + " cannot be assigned to "
+                                    + StandardLibrary.functions.get(call.name).args.get(i));
+                }
+            }
+        } else {
+            Optional<Type> funDefReturnType = types.valueFor(definitions.valueFor(call).get());
+            if (funDefReturnType.isEmpty()) {
+                ((FunDef) definitions.valueFor(call).get()).accept(this);
+                funDefReturnType = types.valueFor(definitions.valueFor(call).get());
+            }
+            types.store(funDefReturnType.get().asFunction().get().returnType, call);
+            call.arguments.forEach(arg -> {
+                arg.accept(this);
+            });
+            if (call.arguments.size() != ((FunDef) definitions.valueFor(call).get()).parameters.size()) {
+                Report.error(call.position, "Number of arguments does not comply with function definition");
+            }
+            for (int i = 0; i < call.arguments.size(); i++) {
+                if (!types.valueFor(call.arguments.get(i)).get()
+                        .equals(types.valueFor(((FunDef) definitions.valueFor(call).get()).parameters.get(i)).get())) {
+                    Report.error(call.arguments.get(i).position,
+                            "This argument does not match the paramter type in function definition: "
+                                    + types.valueFor(call.arguments.get(i)).get() + " cannot be assigned to "
+                                    + types.valueFor(((FunDef) definitions.valueFor(call).get()).parameters.get(i))
+                                            .get());
+                }
             }
         }
     }

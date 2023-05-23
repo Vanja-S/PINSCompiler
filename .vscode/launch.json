@@ -25,7 +25,7 @@
             "request": "launch",
             "mainClass": "App",
             "projectName": "PINSCompiler_aaffa8a2",
-            "args": "test ./ TestsRunner/tests/6-frm.tst -v"
+            "args": "test ./ TestsRunner/tests/8-int.tst -v"
         },
         {
             "type": "java",

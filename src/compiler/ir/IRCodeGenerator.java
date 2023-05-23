@@ -11,9 +11,8 @@ import java.lang.Character.UnicodeScript;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.lang.model.util.ElementScanner14;
-
 import common.Constants;
+import common.StandardLibrary;
 import compiler.common.Visitor;
 import compiler.frm.Access;
 import compiler.frm.Frame;
@@ -83,8 +82,16 @@ public class IRCodeGenerator implements Visitor {
 
     @Override
     public void visit(Call call) {
-        var jumpToFunction = new NameExpr(frames.valueFor(definitions.valueFor(call).get()).get().label);
-        imcCode.store(jumpToFunction, call);
+        List<IRExpr> argsExprs = new ArrayList<>();
+        for (Expr expr : call.arguments) {
+            expr.accept(this);
+            argsExprs.add((IRExpr) imcCode.valueFor(expr).get());
+        }
+        if (StandardLibrary.functions.containsKey(call.name)) {
+            imcCode.store(new CallExpr(Label.named(StandardLibrary.functions.get(call.name).label), argsExprs), call);
+        } else {
+            imcCode.store(new CallExpr(frames.valueFor(call).get().label, argsExprs), call);
+        }
     }
 
     @Override
@@ -157,7 +164,9 @@ public class IRCodeGenerator implements Visitor {
             for (int i = 0; i < (staticLevel - a.staticLevel); i++) {
                 staticTraversal = new MemExpr(staticTraversal);
             }
-            imcCode.store(new MemExpr(new BinopExpr(staticTraversal, new ConstantExpr(a.offset), BinopExpr.Operator.ADD)), name);
+            imcCode.store(
+                    new MemExpr(new BinopExpr(staticTraversal, new ConstantExpr(a.offset), BinopExpr.Operator.ADD)),
+                    name);
         } else if (access instanceof Global a) {
             imcCode.store(new NameExpr(a.label), name);
         }
@@ -287,7 +296,7 @@ public class IRCodeGenerator implements Visitor {
 
     @Override
     public void visit(VarDef varDef) {
-        if(staticLevel == 0)
+        if (staticLevel == 0)
             chunks.add(new Chunk.GlobalChunk((Access.Global) accesses.valueFor(varDef).get()));
     }
 

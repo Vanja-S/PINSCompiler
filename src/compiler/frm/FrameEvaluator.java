@@ -8,6 +8,7 @@ package compiler.frm;
 import static common.RequireNonNull.requireNonNull;
 
 import compiler.common.Visitor;
+import compiler.frm.Frame.Label;
 import compiler.parser.ast.def.*;
 import compiler.parser.ast.def.FunDef.Parameter;
 import compiler.parser.ast.expr.*;
@@ -17,8 +18,12 @@ import compiler.parser.ast.type.TypeName;
 import compiler.seman.common.NodeDescription;
 import compiler.seman.type.type.Type;
 
+import common.StandardLibrary;
+
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.management.StandardEmitterMBean;
 
 import common.Constants;
 
@@ -77,7 +82,12 @@ public class FrameEvaluator implements Visitor {
 
     @Override
     public void visit(Call call) {
-        if (staticLevel == 0) {
+
+        if(StandardLibrary.functions.containsKey(call.name)) {
+            accesses.store(new Access.Global(StandardLibrary.functions.get(call.name).returnType.sizeInBytes(), Label.named(StandardLibrary.functions.get(call.name).label)), call);
+            return;
+        }
+        else if (staticLevel == 0) {
             accesses.store(new Access.Global(types.valueFor(definitions.valueFor(call).get()).get().sizeInBytes(),
                     frames.valueFor(definitions.valueFor(call).get()).get().label), call);
         } else {

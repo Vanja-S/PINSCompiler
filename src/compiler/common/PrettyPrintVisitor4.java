@@ -24,6 +24,8 @@ import compiler.parser.ast.type.TypeName;
 import compiler.seman.common.NodeDescription;
 import compiler.seman.type.type.Type;
 
+import common.StandardLibrary;
+
 public class PrettyPrintVisitor4 implements Visitor {
     /**
      * Trenutna indentacija.
@@ -92,11 +94,20 @@ public class PrettyPrintVisitor4 implements Visitor {
     @Override
     public void visit(Call call) {
         println("Call", call, call.name);
-        inNewScope(() -> {
-            printDefinedAt(call);
-            printTypedAs(call);
-            call.arguments.forEach((arg) -> arg.accept(this));
-        });
+        if(StandardLibrary.functions.containsKey(call.name)) {
+            inNewScope(() -> {
+                print("# standard function" + "\n");
+                print("# typed as: ", StandardLibrary.functions.get(call.name).returnType.toString(), "\n");
+                call.arguments.forEach((arg) -> arg.accept(this));
+            });
+        }
+        else {
+            inNewScope(() -> {
+                printDefinedAt(call);
+                printTypedAs(call);
+                call.arguments.forEach((arg) -> arg.accept(this));
+            });
+        }
     }
 
     @Override

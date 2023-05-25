@@ -99,10 +99,24 @@ public class IRCodeGenerator implements Visitor {
         var leftExpr = getIRExpr(binary.left);
         var rightExpr = getIRExpr(binary.right);
 
-        var operator = BinopExpr.Operator.valueOf(binary.operator.name());
-        var binaryExpr = new BinopExpr(leftExpr, rightExpr, operator);
+        BinopExpr.Operator operator;
+        if (binary.operator.isAndOr() || binary.operator.isArithmetic() || binary.operator.isComparison()) {
+            operator = BinopExpr.Operator.valueOf(binary.operator.toString());
+            imcCode.store(new BinopExpr(leftExpr, rightExpr, operator), binary);
+        } else if(binary.operator == Binary.Operator.ASSIGN) {
+            imcCode.store( new EseqExpr(new MoveStmt(leftExpr, rightExpr), leftExpr), binary);
+        } else if(binary.operator == Binary.Operator.ARR) {
+            var type = types.valueFor(binary.left).get();
+            var elementType = ((Type.Array) type).type;
 
-        imcCode.store(binaryExpr, binary);
+            operator = BinopExpr.Operator.MUL;
+            BinopExpr index = new BinopExpr(rightExpr, new ConstantExpr(elementType.sizeInBytes()), operator);
+            operator = BinopExpr.Operator.ADD;
+            BinopExpr offset = new BinopExpr(leftExpr, index, operator);
+
+            imcCode.store(types.valueFor(), binary)
+        }
+
     }
 
     @Override

@@ -1,13 +1,13 @@
-fun main(x: integer) : integer = (
-    {i = 2},
-    print_int(i),
-    {str = 'hello'},
-    print_str(str),
-    {bol = true},
-    print_log(bol),
-    seed(2),
-    print_int(rand_int(1,2)),
-    print_int(rand_int(1,100)),
-    print_int(rand_int(1,100)),
+fun main(x : integer) : integer = (
+    {for i = 0, 12, 1: (
+            {ar[i] = i}
+    )},
+    {for i = 0, 12, 1: (
+        {if i % 2 == 0 then (
+            print_int(g(ar[i]))
+        )}
+    )},
     0
-) {where var i: integer; var str : string; var bol : logical}
+) {where var i: integer; var  ar : arr[12] integer};
+
+fun g(y:integer) : integer = y

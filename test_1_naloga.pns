@@ -1,7 +1,10 @@
+
 fun main(x : integer) : integer = (
     {for i = 0, 12, 1: (
             {ar[i] = i}
-    )},
+    )},#(
+    n
+)#
     {for i = 0, 12, 1: (
         {if i % 2 == 0 then (
             print_int(g(ar[i]))
@@ -10,4 +13,7 @@ fun main(x : integer) : integer = (
     0
 ) {where var i: integer; var  ar : arr[12] integer};
 
+
 fun g(y:integer) : integer = y
+
+# neki neki neki

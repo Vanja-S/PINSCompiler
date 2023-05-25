@@ -117,7 +117,7 @@ public class Lexer {
     public List<Symbol> scan() {
         var symbols = new ArrayList<Symbol>();
         // Spremenljivke za grajenje leksemov
-        boolean comment = false;
+        int comment = -1;
 
         for (; i < source.length(); i++, inline_start_index++, inline_stop_index++) {
             // CR char spregledamo
@@ -131,15 +131,21 @@ public class Lexer {
                 // loop iteracijo se povečata za 1
                 inline_start_index = 0;
                 inline_stop_index = 0;
-                comment = false;
+                if(comment != 1)
+                    comment = -1;
                 continue;
             }
 
-            else if (comment)
+            else if (source.charAt(i) == ')' && source.charAt(i + 1) == '#' && comment == 1) {
+                comment = -1;
+                i++;
+            }
+
+            else if (comment >= 0)
                 continue;
 
             else if (source.charAt(i) == '#') {
-                comment = true;
+                comment = parseComment(source);
                 continue;
             }
 
@@ -184,6 +190,13 @@ public class Lexer {
         symbols.add(
                 new Symbol(new Position(line_index, inline_start_index, line_index, inline_stop_index + 1), EOF, "$"));
         return symbols;
+    }
+
+    private static int parseComment(String source) {
+        if (source.charAt(i + 1) != '(') 
+            return 0;
+        else 
+            return 1;
     }
 
     private static Symbol parseString(String source) {

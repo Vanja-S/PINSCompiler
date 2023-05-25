@@ -1,0 +1,17 @@
+fun main(x: integer) : integer = (
+    {i = 2},
+    print_int(i),
+    {str = 'hello'},
+    print_str(str),
+    {bol = true},
+    print_log(bol),
+    seed(2),
+    # komentar 1 neki neki
+    print_int(rand_int(1,2)),#(
+        Komentar čez več vrstic in še več
+    )#
+    print_int(rand_int(1,100)),
+    print_int(rand_int(1,100)),
+    0
+    # komentar dva in dva
+) {where var i: integer; var str : string; var bol : logical}

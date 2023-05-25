@@ -114,9 +114,8 @@ public class IRCodeGenerator implements Visitor {
             operator = BinopExpr.Operator.ADD;
             BinopExpr offset = new BinopExpr(leftExpr, index, operator);
 
-            imcCode.store(types.valueFor(), binary)
+            imcCode.store(types.valueFor(binary).get().isArray() ? offset : new MemExpr(offset), binary);
         }
-
     }
 
     @Override
